@@ -186,8 +186,11 @@
             <p style="margin-bottom:14px; font-size:14px; color:var(--text-light);">
               ATC Hostel Block designed to support excellent student life with 24/7 security.
             </p>
-            <div class="row" style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-weight:700; color:var(--primary);">TSh ${parseFloat(h.fee_per_semester).toLocaleString()}</span>
+            <div class="row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; flex-direction:column;">
+                <span style="font-weight:700; color:var(--primary); font-size:15px;">TSh ${parseFloat(h.fee_per_semester).toLocaleString()} / Sem</span>
+                <span style="font-size:11px; color:var(--muted); font-weight:600;">TSh ${(parseFloat(h.fee_per_semester)*2).toLocaleString()} / Year</span>
+              </div>
               ${actionBtn}
             </div>
           </div>
