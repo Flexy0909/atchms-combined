@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users Console — ATCHMS</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="admin-panel">
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Admin Console</h5><small>Dean of Students</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="admin.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="admin-applications.html"><span class="dot"></span> Applications</a></li>
+      <li><a href="admin-students.html"><span class="dot"></span> Students</a></li>
+      <li><a href="admin-users.html" class="active"><span class="dot"></span> Users</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Hostels</a></li>
+      <li><a href="admin-rooms.html"><span class="dot"></span> Rooms</a></li>
+      <li><a href="admin-rules.html"><span class="dot"></span> Allocation Rules</a></li>
+      <li><a href="admin-payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="admin-maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="admin-reports.html"><span class="dot"></span> Reports</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Users</h2>
+        <p>All system administrators and student accounts.</p>
+      </div>
+      <div>
+        <button class="btn btn-primary" onclick="openRegisterModal()">➕ Register User</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mini-stats">
+      <div class="mini-stat"><small>Total Users</small><h3 id="stat-total">0</h3><div class="delta">Registered</div></div>
+      <div class="mini-stat"><small>Administrators</small><h3 id="stat-admins">0</h3><div class="delta">Staff</div></div>
+      <div class="mini-stat"><small>Students</small><h3 id="stat-students">0</h3><div class="delta">Learners</div></div>
+    </div>
+
+    <!-- Search and filter controls -->
+    <div class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      <input type="text" id="search-input" placeholder="Search by name, admission no, or email..." oninput="filterUsers()" style="flex: 2; min-width: 220px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px;" />
+      <select id="role-filter" onchange="filterUsers()" style="flex: 1; min-width: 160px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--white); color: var(--text);">
+        <option value="">All Roles</option>
+        <option value="admin">Administrator</option>
+        <option value="student">Student</option>
+      </select>
+    </div>
+
+    <!-- Users Table -->
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Admission / Email</th>
+              <th>Full Name</th>
+              <th>Phone Number</th>
+              <th>Role</th>
+              <th>Gender</th>
+              <th>Date Registered</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="7" style="text-align:center;">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal: User Profile Detail & Password Reset -->
+<div class="atchms-modal-overlay" id="user-modal">
+  <div class="atchms-modal-card">
+    <div class="atchms-modal-header">
+      <h5 id="modal-title">User Profile</h5>
+      <button class="atchms-modal-close" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="atchms-modal-body">
+      <div id="modal-details" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:14px; color:var(--text); margin-bottom: 20px;">
+        <!-- Filled dynamically -->
+      </div>
+      
+      <hr style="border:0; border-top:1.5px solid var(--border); margin:20px 0;" />
+      
+      <form id="reset-password-form" onsubmit="adminResetPassword(event)">
+        <input type="hidden" id="reset-user-id" />
+        <h6 style="margin:0 0 10px 0; font-size:14px; color:var(--dark); font-weight:700;">Reset Password</h6>
+        <div style="display:flex; gap:10px;">
+          <input type="password" id="reset-new-password" placeholder="Enter new password..." required minlength="6" class="form-control" style="flex:1;" />
+          <button type="submit" class="btn btn-primary" id="modal-reset-btn">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: User Registration Form -->
+<div class="atchms-modal-overlay" id="register-modal">
+  <div class="atchms-modal-card" style="max-width: 580px; width: 90%;">
+    <div class="atchms-modal-header" style="padding-bottom:12px;">
+      <h3 style="margin:0; font-size:16px; color:var(--dark); font-weight:700;">Register New User</h3>
+      <button class="atchms-modal-close" onclick="closeRegisterModal()">✕</button>
+    </div>
+    <form id="register-form" onsubmit="adminRegisterUser(event)">
+      <div class="atchms-modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">First Name *</label>
+          <input type="text" id="reg-first-name" required placeholder="e.g. John" class="form-control" />
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Last Name *</label>
+          <input type="text" id="reg-last-name" required placeholder="e.g. Doe" class="form-control" />
+        </div>
+        
+        <div style="grid-column: span 2;">
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Middle Name (Optional)</label>
+          <input type="text" id="reg-middle-name" placeholder="e.g. Robert" class="form-control" />
+        </div>
+        
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Email Address *</label>
+          <input type="email" id="reg-email" required placeholder="e.g. user@gmail.com" class="form-control" />
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Phone Number *</label>
+          <input type="text" id="reg-phone" required placeholder="e.g. 0788888888" class="form-control" />
+        </div>
+        
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Role *</label>
+          <select id="reg-role" required onchange="toggleRoleFields()" class="form-control" style="background:#fff;">
+            <option value="student">Student</option>
+            <option value="admin">Administrator</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Gender (For Rooms) *</label>
+          <select id="reg-gender" required class="form-control" style="background:#fff;">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        
+        <!-- Student Only fields -->
+        <div class="student-only-field">
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Admission Number *</label>
+          <input type="text" id="reg-admission-no" required placeholder="e.g. 25050512149" class="form-control" />
+        </div>
+        <div class="student-only-field">
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Academic Year *</label>
+          <input type="text" id="reg-year" required placeholder="e.g. 2026/2027" class="form-control" />
+        </div>
+        <div style="grid-column: span 2;" class="student-only-field">
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Course / Programme *</label>
+          <input type="text" id="reg-programme" required placeholder="e.g. Ordinary Diploma in Computer Science" class="form-control" />
+        </div>
+        
+        <div style="grid-column: span 2;">
+          <label style="font-size:12px; font-weight:600; color:var(--muted); display:block; margin-bottom:4px;">Temporary Password *</label>
+          <input type="text" id="reg-password" required placeholder="e.g. ATC8888" minlength="6" class="form-control" />
+        </div>
+        
+      </div>
+      <div class="atchms-modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:15px 20px;">
+        <button type="button" class="btn" style="background:var(--light); color:var(--text);" onclick="closeRegisterModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="reg-submit-btn">Register User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  let allUsers = [];
+
+  function openUserModal(index) {
+    const u = allUsers[index];
+    document.getElementById('reset-user-id').value = u.id;
+    document.getElementById('reset-new-password').value = '';
+    document.getElementById('modal-title').textContent = `${u.role === 'admin' ? 'Admin' : 'Student'} Profile: ${u.fullname}`;
+    
+    const initials = (u.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    const avatarHtml = u.avatar_url 
+      ? `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:16px;">
+          <img src="${u.avatar_url}" onclick="ATCHMS.previewImage('${u.avatar_url}')" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.15); cursor:pointer;" alt="User Photo" />
+         </div>`
+      : `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:16px;">
+          <div style="width:100px; height:100px; border-radius:50%; background:var(--light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700; border:3px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.15);">${initials}</div>
+         </div>`;
+
+    let profileDetailsHtml = avatarHtml + `
+      <div><strong>Full Name:</strong><br>${u.fullname}</div>
+      <div><strong>Email Address:</strong><br>${u.email}</div>
+      <div><strong>Phone Number:</strong><br>${u.phone_no || 'N/A'}</div>
+      <div><strong>Role:</strong><br><span style="text-transform: capitalize;" class="badge ${u.role === 'admin' ? 'badge-gold' : 'badge-green'}">${u.role}</span></div>
+      <div><strong>Gender:</strong><br>${u.gender ? u.gender.toUpperCase() : 'N/A'}</div>
+      <div><strong>Registration Date:</strong><br>${ATCHMS.fmtDate(u.created_at)}</div>
+    `;
+
+    if (u.role === 'student') {
+      profileDetailsHtml += `
+        <div><strong>Admission No:</strong><br><span style="font-family:monospace;">${u.admission_no || 'N/A'}</span></div>
+        <div><strong>Course / Programme:</strong><br>${u.programme || 'N/A'}</div>
+        <div><strong>Academic Year:</strong><br>${u.academic_year || 'N/A'}</div>
+      `;
+    }
+
+    document.getElementById('modal-details').innerHTML = profileDetailsHtml;
+    document.getElementById('user-modal').style.display = 'flex';
+  }
+
+  function closeUserModal() {
+    document.getElementById('user-modal').style.display = 'none';
+  }
+
+  async function adminResetPassword(e) {
+    e.preventDefault();
+    const student_id = document.getElementById('reset-user-id').value;
+    const new_password = document.getElementById('reset-new-password').value;
+    const btn = document.getElementById('modal-reset-btn');
+    
+    btn.textContent = 'Updating...';
+    btn.disabled = true;
+    try {
+      const res = await ATCHMS.api('/admin/reset-student-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id, new_password })
+      });
+      if (res.error) {
+        alert('Error: ' + res.error);
+      } else {
+        alert('✅ Password updated successfully! Provide this new password to the user.');
+        closeUserModal();
+      }
+    } catch(err) {
+      alert('Error updating password: ' + err.message);
+    } finally {
+      btn.textContent = 'Update Password';
+      btn.disabled = false;
+    }
+  }
+
+  window.openRegisterModal = () => {
+    document.getElementById('register-form').reset();
+    toggleRoleFields();
+    document.getElementById('register-modal').style.display = 'flex';
+  };
+
+  window.closeRegisterModal = () => {
+    document.getElementById('register-modal').style.display = 'none';
+  };
+
+  window.toggleRoleFields = () => {
+    const role = document.getElementById('reg-role').value;
+    const studentFields = document.querySelectorAll('.student-only-field');
+    studentFields.forEach(el => {
+      const input = el.querySelector('input');
+      if (role === 'admin') {
+        el.style.display = 'none';
+        if (input) input.removeAttribute('required');
+      } else {
+        el.style.display = 'block';
+        if (input) input.setAttribute('required', 'required');
+      }
+    });
+  };
+
+  window.adminRegisterUser = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('reg-submit-btn');
+    btn.textContent = 'Registering...';
+    btn.disabled = true;
+
+    const first_name = document.getElementById('reg-first-name').value;
+    const last_name = document.getElementById('reg-last-name').value;
+    const middle_name = document.getElementById('reg-middle-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone_no = document.getElementById('reg-phone').value;
+    const role = document.getElementById('reg-role').value;
+    const gender = document.getElementById('reg-gender').value;
+    
+    // Conditional values based on role
+    const admission_no = role === 'student' ? document.getElementById('reg-admission-no').value : null;
+    const academic_year = role === 'student' ? document.getElementById('reg-year').value : null;
+    const programme = role === 'student' ? document.getElementById('reg-programme').value : null;
+    const password = document.getElementById('reg-password').value;
+
+    try {
+      const res = await ATCHMS.api('/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name, middle_name, last_name, email, phone_no, role, gender,
+          admission_no, academic_year, programme, password
+        })
+      });
+
+      if (res.error) {
+        alert('Error: ' + res.error);
+      } else {
+        alert('✅ User registered successfully!');
+        closeRegisterModal();
+        loadUsers();
+      }
+    } catch (err) {
+      alert('Failed: ' + err.message);
+    } finally {
+      btn.textContent = 'Register User';
+      btn.disabled = false;
+    }
+  };
+
+  function renderUsersList(list) {
+    const tbody = document.getElementById('users-tbody');
+    if (list.length > 0) {
+      tbody.innerHTML = list.map((u) => {
+        const idx = allUsers.findIndex(x => x.id === u.id);
+        const displayId = u.role === 'student' ? u.admission_no : u.email;
+        const initials = (u.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+        const avatarHtml = u.avatar_url 
+          ? `<img src="${u.avatar_url}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; border:1.5px solid var(--border);" alt="" />`
+          : `<span style="width:30px; height:30px; border-radius:50%; background:var(--light); color:var(--primary); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:1.5px solid var(--border);">${initials}</span>`;
+
+        return `
+          <tr>
+            <td data-label="Admission / Email"><span style="font-family:monospace;">${displayId || 'N/A'}</span></td>
+            <td data-label="Name">
+              <div style="display:flex; align-items:center; gap:8px;">
+                ${avatarHtml}
+                <strong>${u.fullname}</strong>
+              </div>
+            </td>
+            <td data-label="Phone">${u.phone_no || 'N/A'}</td>
+            <td data-label="Role"><span style="text-transform: capitalize;" class="badge ${u.role === 'admin' ? 'badge-gold' : 'badge-green'}">${u.role}</span></td>
+            <td data-label="Gender">${u.gender ? u.gender.toUpperCase() : 'N/A'}</td>
+            <td data-label="Date">${ATCHMS.fmtDate(u.created_at)}</td>
+            <td data-label="Action">
+              <button class="action-btn view-btn" onclick="openUserModal(${idx})">Manage Profile</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No users found.</td></tr>';
+    }
+  }
+
+  window.filterUsers = () => {
+    const query = document.getElementById('search-input').value.toLowerCase().trim();
+    const role = document.getElementById('role-filter').value;
+
+    const filtered = allUsers.filter(u => {
+      const matchesSearch = !query ||
+        (u.fullname && u.fullname.toLowerCase().includes(query)) ||
+        (u.email && u.email.toLowerCase().includes(query)) ||
+        (u.admission_no && u.admission_no.toLowerCase().includes(query));
+
+      const matchesRole = !role || u.role === role;
+
+      return matchesSearch && matchesRole;
+    });
+
+    renderUsersList(filtered);
+  };
+
+  if (ATCHMS.requireAdmin()) {
+    async function loadUsers() {
+      try {
+        const users = await ATCHMS.api('/admin/users');
+        allUsers = users;
+        
+        const total = users.length;
+        const admins = users.filter(u => u.role === 'admin').length;
+        const students = users.filter(u => u.role === 'student').length;
+
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-admins').textContent = admins;
+        document.getElementById('stat-students').textContent = students;
+
+        renderUsersList(users);
+      } catch (err) {
+        console.error('Error loading users:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadUsers);
+  }
+</script>
+</body>
+</html>

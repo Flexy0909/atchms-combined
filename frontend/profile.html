@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>My Profile — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  /* Profile-page overrides — base styles live in style.css */
+  #avatar-file-input { display: none; }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span><span></span><span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Student Panel</h5><small>ATCHMS v2.6</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="dashboard.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="my-application.html"><span class="dot"></span> My Application</a></li>
+      <li><a href="room-details.html"><span class="dot"></span> Room Details</a></li>
+      <li><a href="payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Browse Hostels</a></li>
+      <li><a href="profile.html" class="active"><span class="dot"></span> My Profile</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div id="incomplete-banner-container"></div>
+    <div class="page-head">
+      <div>
+        <h2>My Profile</h2>
+        <p>Manage your personal information and account settings.</p>
+      </div>
+    </div>
+
+    <!-- Profile Banner + Avatar -->
+    <div class="profile-edit-card">
+      <div class="profile-banner">
+        <div class="profile-banner-overlay"></div>
+      </div>
+      <div class="avatar-upload-wrap">
+        <div class="avatar-preview" id="avatar-display" onclick="handleAvatarClick()">
+          <span id="avatar-initials">??</span>
+        </div>
+        <div class="avatar-cam-icon" onclick="document.getElementById('avatar-file-input').click()">
+          <svg viewBox="0 0 24 24"><path d="M12 15.2A3.2 3.2 0 1 1 12 8.8a3.2 3.2 0 0 1 0 6.4zM20 4h-3.17L15 2H9L7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/></svg>
+        </div>
+        <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/webp" />
+      </div>
+      <div class="profile-header-info">
+        <h3 id="ph-fullname">Loading…</h3>
+        <p id="ph-subtitle">—</p>
+      </div>
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-bar" id="upload-progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Personal Info Form -->
+    <div class="form-section">
+      <h4>🧑 Personal Information</h4>
+      <form id="profile-form" onsubmit="saveProfile(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="edit-first-name" placeholder="First name" required />
+          </div>
+          <div class="form-group">
+            <label>Middle Name</label>
+            <input type="text" id="edit-middle-name" placeholder="Middle name (optional)" />
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="edit-last-name" placeholder="Last name" required />
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="edit-email" placeholder="your@email.com" required />
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="edit-phone" placeholder="+255 7XX XXX XXX" />
+          </div>
+          <div class="form-group">
+            <label>Admission Number</label>
+            <input type="text" id="edit-admission" readonly />
+          </div>
+          <div class="form-group">
+            <label>Program Type</label>
+            <select id="edit-program-type" onchange="updateProfileCourses()" required>
+              <option value="" disabled selected hidden>— Select Program Type —</option>
+              <option value="Degree Programmes">Degree Programmes</option>
+              <option value="Diploma Programmes">Diploma Programmes</option>
+              <option value="VETs Programmes">VETs Programmes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Programme / Course</label>
+            <select id="edit-programme" required>
+              <option value="" disabled selected hidden>Select Program Type first</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Level / Academic Year</label>
+            <select id="edit-year" required>
+              <option value="" disabled selected hidden>Select Program Type first</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label>Gender</label>
+            <select id="edit-gender">
+              <option value="">— Select —</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="save-btn outline" onclick="loadProfile()">Reset</button>
+          <button type="submit" class="save-btn primary" id="save-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Change Password Form -->
+    <div class="form-section">
+      <h4>🔒 Change Password</h4>
+      <form id="password-form" onsubmit="changePassword(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" id="pw-current" placeholder="Enter current password" required />
+          </div>
+          <div class="form-group" style="opacity:0; pointer-events:none;"><!-- spacer --></div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="pw-new" placeholder="At least 8 characters" required minlength="8" oninput="checkPwMatch()" />
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" id="pw-confirm" placeholder="Repeat new password" required oninput="checkPwMatch()" />
+          </div>
+        </div>
+        <div id="pw-match-msg" style="font-size:12.5px; margin-top:8px; display:none;"></div>
+        <div class="form-actions">
+          <button type="submit" class="save-btn primary" id="pw-save-btn">Update Password</button>
+        </div>
+      </form>
+    </div>
+
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<!-- Toast -->
+<div class="profile-toast" id="toast"></div>
+
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="dashboard.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="my-application.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Apply</span>
+  </a>
+  <a href="room-details.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Room</span>
+  </a>
+  <a href="payments.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="profile.html" class="bottom-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+    <span>Profile</span>
+  </a>
+</div>
+
+<!-- Modal: Profile Image Cropper -->
+<div class="atchms-modal-overlay" id="crop-modal">
+  <div class="atchms-modal-card" style="max-width: 420px; width: 90%;">
+    <div class="atchms-modal-header" style="padding-bottom:12px;">
+      <h5 style="margin:0; font-size:16px; color:var(--dark); font-weight:700;">Adjust Profile Photo</h5>
+      <button class="atchms-modal-close" onclick="closeCropModal()">✕</button>
+    </div>
+    <div class="atchms-modal-body" style="text-align: center; padding: 20px;">
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">Drag to position, slide to zoom your photo inside the circle cutout.</p>
+      
+      <!-- Interactive Cropping Box -->
+      <div style="position: relative; width: 280px; height: 280px; margin: 0 auto 16px; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; background: #eaeaea; cursor: move; user-select: none;">
+        <canvas id="crop-canvas" width="280" height="280" style="position: absolute; inset:0;"></canvas>
+        <!-- Overlay Mask (Circular Cutout) -->
+        <div style="position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 9999px rgba(0, 0, 0, 0.5); border-radius: 50%;"></div>
+      </div>
+      
+      <!-- Zoom Slider -->
+      <div style="margin-bottom: 12px;">
+        <label style="font-size: 12px; font-weight:600; color: var(--muted); display: block; margin-bottom: 6px;">Zoom Level</label>
+        <input type="range" id="crop-zoom" min="1" max="5" step="0.05" value="1" style="width: 80%; accent-color: var(--primary);" />
+      </div>
+    </div>
+    <div class="atchms-modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px;">
+      <button type="button" class="btn" style="background: var(--light); color: var(--text);" onclick="closeCropModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="performUploadCroppedPhoto()" id="crop-upload-btn">Crop & Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  if (!ATCHMS.requireStudent()) { /* blocked by RBAC */ }
+
+  const API = window.ATCHMS_BASE || '/atchms/api';
+  const getToken = () => sessionStorage.getItem('atchms_token');
+
+  const ATC_PROGRAMMES = {
+    "Degree Programmes": [
+      "Bachelor Degree In Computer Science",
+      "Bachelor Degree In Information Technology",
+      "Bachelor Degree In Automotive Electronics Engineering",
+      "Bachelor Degree In Electrical And Automation Engineering",
+      "Bachelor Degree In Electrical And Biomedical Engineering",
+      "Bachelor Degree In Renewable Energy Engineering",
+      "Bachelor Degree In Mechanical Engineering",
+      "Bachelor Degree In Mechatronic And Material Engineering",
+      "Bachelor Degree In Civil And Highway Engineering",
+      "Bachelor Degree In Laboratory Science And Industrial Technology",
+      "Bachelor Degree In Civil And Irrigation Engineering",
+      "Bachelor Degree In Civil Engineering"
+    ],
+    "Diploma Programmes": [
+      "Ordinary Diploma In Computer Science",
+      "Ordinary Diploma In Cyber Security And Digital Forensic",
+      "Ordinary Diploma In Information Technology",
+      "Ordinary Diploma In Multimedia And Animation Technology",
+      "Ordinary Diploma In Auto-Electric And Electronics Engineering",
+      "Ordinary Diploma In Automotive Engineering",
+      "Ordinary Diploma In Heavy Duty Equipment Engineering",
+      "Ordinary Diploma In Electrical And Biomedical Engineering",
+      "Ordinary Diploma In Electrical And Solar PV Systems Engineering",
+      "Ordinary Diploma In Electrical And Wind Energy Systems Engineering",
+      "Ordinary Diploma In Electrical Engineering",
+      "Ordinary Diploma In Electronics And Telecommunications Engineering",
+      "Ordinary Diploma In Hydropower Engineering",
+      "Ordinary Diploma In Instrumentation Engineering",
+      "Ordinary Diploma In Geology And Gemstone Processing Engineering",
+      "Ordinary Diploma In Mechanical And Bio-Energy Engineering",
+      "Ordinary Diploma In Mechanical Engineering",
+      "Ordinary Diploma In Pipe Works, Oil And Gas Engineering",
+      "Ordinary Diploma In Civil And Highway Engineering",
+      "Ordinary Diploma In Laboratory Science And Technology",
+      "Ordinary Diploma In Architecture Engineering",
+      "Ordinary Diploma In Civil And Irrigation Engineering",
+      "Ordinary Diploma In Civil Engineering"
+    ],
+    "VETs Programmes": [
+      "Ufundi Wa Viyozi Na Majokofu (Refrigeration And Air Conditioning)",
+      "Ufundi Magari (Motor Vehicle Mechanics)",
+      "Laboratory Assistant",
+      "Biashara (Business Operation Assistant)",
+      "Computer Applications",
+      "Computer Maintenance",
+      "Information Technology",
+      "Uchoraji Wa Ramani (Civil Draughting)",
+      "Ufundi Bomba (Plumbing And Pipe Fitting)",
+      "Ufundi Electroniki (Electronics)",
+      "Ufundi Mitambo (Fitter Mechanics)",
+      "Ufundi Selemara (Carpentry And Joinery)",
+      "Ufundi Ujenzi (Masonry And Brick Laying)",
+      "Ufundi Wa Mitambo Ya Uzalishaji Wa Umeme Wa Maji (Hydropower Plants Maintenance)",
+      "Ufundi Wa Uchomeleaji Na Uhunzi Wa Vyuma (Welding And Metal Fabrication)",
+      "Ufundi Wa Uchongaji Wa Vyuma Na Vipuli (Fitting And Machining)",
+      "Ufundi Wa Umeme Wa Magari (Auto Electrical)",
+      "Ufundi Wa Umeme Wa Majumbani (Domestic Electrical Installation)",
+      "Ujenzi Na Ukarabati Wa Barabara (Road Construction And Maintenance)",
+      "Ukataji Na Uchongaji Wa Madini (Gemstone Cutting And Polishing)",
+      "Utalii (Tour Guiding)"
+    ]
+  };
+
+  const ATC_LEVELS = {
+    "Degree Programmes": ["NTA Level 7-1", "NTA Level 7-2", "NTA Level 8"],
+    "Diploma Programmes": ["NTA Level 4", "NTA Level 5", "NTA Level 6"],
+    "VETs Programmes": ["NTA Level 1", "NTA Level 2", "NTA Level 3"]
+  };
+
+  function updateProfileCourses() {
+    const type = document.getElementById('edit-program-type').value;
+    const progSel = document.getElementById('edit-programme');
+    const yearSel = document.getElementById('edit-year');
+
+    // Populate Courses
+    progSel.innerHTML = '<option value="" disabled selected hidden>— Select Course —</option>';
+    if (ATC_PROGRAMMES[type]) {
+      ATC_PROGRAMMES[type].forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        progSel.appendChild(opt);
+      });
+    }
+
+    // Populate Levels
+    yearSel.innerHTML = '<option value="" disabled selected hidden>— Select Level —</option>';
+    if (ATC_LEVELS[type]) {
+      ATC_LEVELS[type].forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l;
+        opt.textContent = l;
+        yearSel.appendChild(opt);
+      });
+    }
+  }
+
+  /* ── Show Toast ── */
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `profile-toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function handleAvatarClick() {
+    const cached = ATCHMS.getUser();
+    if (cached && cached.avatar_url) {
+      ATCHMS.previewImage(cached.avatar_url);
+    } else {
+      document.getElementById('avatar-file-input').click();
+    }
+  }
+
+  /* ── Load Profile Data ── */
+  async function loadProfile() {
+    try {
+      const profile = await ATCHMS.api('/auth/profile');
+      populateForm(profile);
+    } catch(e) {
+      const cached = ATCHMS.getUser();
+      if (cached) populateForm(cached);
+    }
+  }
+
+  function populateForm(p) {
+    if (p.first_name) {
+      document.getElementById('edit-first-name').value = p.first_name || '';
+      document.getElementById('edit-middle-name').value = p.middle_name || '';
+      document.getElementById('edit-last-name').value = p.last_name || '';
+    } else if (p.fullname) {
+      const parts = p.fullname.trim().split(/\s+/);
+      if (parts.length === 1) {
+        document.getElementById('edit-first-name').value = parts[0];
+        document.getElementById('edit-middle-name').value = '';
+        document.getElementById('edit-last-name').value = '';
+      } else if (parts.length === 2) {
+        document.getElementById('edit-first-name').value = parts[0];
+        document.getElementById('edit-middle-name').value = '';
+        document.getElementById('edit-last-name').value = parts[1];
+      } else if (parts.length >= 3) {
+        document.getElementById('edit-first-name').value = parts[0];
+        document.getElementById('edit-middle-name').value = parts.slice(1, -1).join(' ');
+        document.getElementById('edit-last-name').value = parts[parts.length - 1];
+      }
+    } else {
+      document.getElementById('edit-first-name').value = '';
+      document.getElementById('edit-middle-name').value = '';
+      document.getElementById('edit-last-name').value = '';
+    }
+
+    document.getElementById('edit-email').value     = p.email || '';
+    document.getElementById('edit-phone').value     = p.phone_no || '';
+    document.getElementById('edit-admission').value = p.admission_no || '';
+    document.getElementById('edit-gender').value    = p.gender || '';
+
+    // Auto-detect program type from course name
+    let detectedType = '';
+    if (p.programme) {
+      for (const [type, list] of Object.entries(ATC_PROGRAMMES)) {
+        if (list.includes(p.programme)) {
+          detectedType = type;
+          break;
+        }
+      }
+    }
+
+    const typeSel = document.getElementById('edit-program-type');
+    typeSel.value = detectedType;
+    updateProfileCourses();
+
+    document.getElementById('edit-programme').value = p.programme || '';
+    document.getElementById('edit-year').value      = p.academic_year || '';
+
+    // Header info
+    const initials = (p.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('ph-fullname').textContent = p.fullname || '—';
+    document.getElementById('ph-subtitle').textContent = `${p.programme || 'Student'} • Adm: ${p.admission_no || 'N/A'}`;
+
+    // Avatar
+    const avatarEl = document.getElementById('avatar-display');
+    if (p.avatar_url) {
+      avatarEl.innerHTML = `<img src="${p.avatar_url}?t=${Date.now()}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; display:block;" alt="Profile photo" />`;
+    } else {
+      avatarEl.innerHTML = `<span id="avatar-initials">${initials}</span>`;
+    }
+
+    // Render dynamic incomplete banner if flagged
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('incomplete') === '1') {
+      const missing = [];
+      const first = document.getElementById('edit-first-name').value.trim();
+      const last = document.getElementById('edit-last-name').value.trim();
+      if (!first || !last) missing.push("First and Last Name");
+      if (!p.phone_no) missing.push("Phone Number");
+      if (!detectedType) missing.push("Program Type");
+      if (!p.programme) missing.push("Course / Programme");
+      if (!p.academic_year) missing.push("Level / Academic Year");
+      if (!p.gender) missing.push("Gender");
+      if (!p.avatar_url) missing.push("Profile Photo");
+
+      const bannerContainer = document.getElementById('incomplete-banner-container');
+      if (missing.length > 0) {
+        bannerContainer.innerHTML = `
+          <div class="alert-banner" style="background:#fef2f2; border:1px solid #fee2e2; border-radius:12px; padding:20px; margin-bottom:28px; color:#991b1b; font-size:14px; display:flex; align-items:start; gap:16px; box-shadow: 0 2px 10px rgba(153,27,27,0.05);">
+            <span style="font-size:24px; line-height:1;">⚠️</span>
+            <div style="flex:1;">
+              <strong style="display:block; margin-bottom:6px; font-weight:700; font-size:15px;">Account Activation Required</strong>
+              To activate your account and access the ATCHMS dashboard, please complete the following missing details in your profile:
+              <ul style="margin:10px 0 0 20px; padding:0; list-style-type:disc; line-height:1.6;">
+                ${missing.map(m => `<li><strong>${m}</strong></li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+      } else {
+        bannerContainer.innerHTML = '';
+      }
+    }
+  }
+
+  /* ── Save Profile ── */
+  async function saveProfile(e) {
+    e.preventDefault();
+    const btn = document.getElementById('save-btn');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+    try {
+      const first = document.getElementById('edit-first-name').value.trim();
+      const middle = document.getElementById('edit-middle-name').value.trim();
+      const last = document.getElementById('edit-last-name').value.trim();
+      const fullname = [first, middle, last].filter(Boolean).join(' ');
+
+      const body = {
+        first_name:    first,
+        middle_name:   middle,
+        last_name:     last,
+        fullname:      fullname,
+        email:         document.getElementById('edit-email').value.trim(),
+        phone_no:      document.getElementById('edit-phone').value.trim(),
+        programme:     document.getElementById('edit-programme').value.trim(),
+        academic_year: document.getElementById('edit-year').value,
+        gender:        document.getElementById('edit-gender').value,
+      };
+
+      // Validate avatar photo
+      const cached = ATCHMS.getUser();
+      if (!cached || !cached.avatar_url) {
+        showToast('❌ Profile photo is required. Please upload a photo.', 'error');
+        btn.textContent = 'Save Changes';
+        btn.disabled = false;
+        return;
+      }
+
+      const res = await fetch(`${API}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Update failed');
+
+      // Refresh sessionStorage cache
+      const updatedUser = { ...cached, ...body };
+      sessionStorage.setItem('atchms_user', JSON.stringify(updatedUser));
+      populateForm(updatedUser);
+      showToast('✅ Profile updated successfully!');
+
+      // Redirect if coming from incomplete flag
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('incomplete') === '1') {
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+      }
+    } catch(err) {
+      showToast('❌ ' + err.message, 'error');
+    } finally {
+      btn.textContent = 'Save Changes';
+      btn.disabled = false;
+    }
+  }
+
+  /* ── Change Password ── */
+  function checkPwMatch() {
+    const msg = document.getElementById('pw-match-msg');
+    const nw  = document.getElementById('pw-new').value;
+    const cnf = document.getElementById('pw-confirm').value;
+    if (!cnf) { msg.style.display = 'none'; return; }
+    if (nw === cnf) {
+      msg.style.display = 'block';
+      msg.style.color = '#0B5D3B';
+      msg.textContent = '✓ Passwords match';
+    } else {
+      msg.style.display = 'block';
+      msg.style.color = '#c0392b';
+      msg.textContent = '✗ Passwords do not match';
+    }
+  }
+
+  async function changePassword(e) {
+    e.preventDefault();
+    const nw = document.getElementById('pw-new').value;
+    const cnf = document.getElementById('pw-confirm').value;
+    if (nw !== cnf) { showToast('Passwords do not match', 'error'); return; }
+
+    const btn = document.getElementById('pw-save-btn');
+    btn.textContent = 'Updating…';
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({
+          currentPassword: document.getElementById('pw-current').value,
+          newPassword: nw
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Password change failed');
+      document.getElementById('password-form').reset();
+      document.getElementById('pw-match-msg').style.display = 'none';
+      showToast('✅ Password updated successfully!');
+    } catch(err) {
+      showToast('❌ ' + err.message, 'error');
+    } finally {
+      btn.textContent = 'Update Password';
+      btn.disabled = false;
+    }
+  }
+
+  /* ── Avatar Upload Cropper ── */
+  let cropImg = null;
+  let cropZoom = 1;
+  let cropPanX = 0;
+  let cropPanY = 0;
+  let isDragging = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  
+  const cropCanvas = document.getElementById('crop-canvas');
+  const cropCtx = cropCanvas.getContext('2d');
+
+  function openCropModal(imgSrc) {
+    cropImg = new Image();
+    cropImg.onload = () => {
+      cropZoom = 1;
+      cropPanX = 0;
+      cropPanY = 0;
+      document.getElementById('crop-zoom').value = 1;
+      document.getElementById('crop-modal').style.display = 'flex';
+      drawCropCanvas();
+    };
+    cropImg.src = imgSrc;
+  }
+
+  window.closeCropModal = () => {
+    document.getElementById('crop-modal').style.display = 'none';
+    document.getElementById('avatar-file-input').value = '';
+  };
+
+  function drawCropCanvas() {
+    if (!cropImg || !cropCtx) return;
+    const cw = cropCanvas.width;
+    const ch = cropCanvas.height;
+    cropCtx.clearRect(0, 0, cw, ch);
+    
+    // Draw background image centered with zoom and pan
+    const iw = cropImg.width;
+    const ih = cropImg.height;
+    
+    const baseScale = Math.max(cw / iw, ch / ih);
+    const finalScale = baseScale * cropZoom;
+    
+    const w = iw * finalScale;
+    const h = ih * finalScale;
+    
+    const x = (cw - w) / 2 + cropPanX;
+    const y = (ch - h) / 2 + cropPanY;
+    
+    cropCtx.drawImage(cropImg, x, y, w, h);
+  }
+
+  // Mouse drag events
+  cropCanvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging || !cropImg) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    cropPanX += dx;
+    cropPanY += dy;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    drawCropCanvas();
+  });
+
+  // Touch drag support
+  cropCanvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      dragStartX = e.touches[0].clientX;
+      dragStartY = e.touches[0].clientY;
+    }
+  });
+
+  window.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!isDragging || !cropImg) return;
+    e.preventDefault();
+    const dx = e.touches[0].clientX - dragStartX;
+    const dy = e.touches[0].clientY - dragStartY;
+    cropPanX += dx;
+    cropPanY += dy;
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    drawCropCanvas();
+  });
+
+  document.getElementById('crop-zoom').addEventListener('input', function() {
+    cropZoom = parseFloat(this.value);
+    drawCropCanvas();
+  });
+
+  // Listen to file selection
+  document.getElementById('avatar-file-input').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      showToast('Image must be under 3 MB', 'error');
+      this.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      openCropModal(ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Upload cropped image
+  window.performUploadCroppedPhoto = () => {
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 300;
+    exportCanvas.height = 300;
+    const exportCtx = exportCanvas.getContext('2d');
+    
+    // Draw circular cropped region from visible canvas
+    exportCtx.beginPath();
+    exportCtx.arc(150, 150, 150, 0, Math.PI * 2);
+    exportCtx.clip();
+    
+    exportCtx.drawImage(cropCanvas, 0, 0, cropCanvas.width, cropCanvas.height, 0, 0, 300, 300);
+    
+    const btn = document.getElementById('crop-upload-btn');
+    btn.disabled = true;
+    btn.textContent = 'Uploading...';
+    
+    exportCanvas.toBlob(async (blob) => {
+      if (!blob) {
+        showToast('❌ Image crop failed', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Crop & Save';
+        return;
+      }
+      
+      try {
+        const form = new FormData();
+        form.append('avatar', blob, 'avatar.jpg');
+        
+        const res = await fetch(`${API}/auth/avatar`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${getToken()}` },
+          body: form
+        });
+        
+        const resp = await res.json();
+        if (res.ok && resp.avatar_url) {
+          document.getElementById('avatar-display').innerHTML = `<img src="${resp.avatar_url}?t=${Date.now()}" alt="Profile photo" />`;
+          // Update cache
+          const cached = ATCHMS.getUser();
+          sessionStorage.setItem('atchms_user', JSON.stringify({ ...cached, avatar_url: resp.avatar_url }));
+          showToast('✅ Profile photo updated!');
+          closeCropModal();
+        } else {
+          showToast('❌ Upload failed: ' + (resp.error || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showToast('❌ Upload error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Crop & Save';
+      }
+    }, 'image/jpeg', 0.9);
+  };
+
+  /* ── Init ── */
+  document.addEventListener('DOMContentLoaded', () => {
+    loadProfile().then(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('incomplete') === '1') {
+        const style = document.createElement('style');
+        style.textContent = `
+          .sidebar, .header-right, .bottom-nav, .sidebar-toggle, label[for="nav-toggle"], .back-btn { display: none !important; }
+          .app { grid-template-columns: 1fr !important; max-width: 900px; margin: 0 auto; padding: 20px; }
+          .main { padding: 20px 0 !important; background: transparent !important; }
+          .form-actions button.outline { display: none !important; }
+        `;
+        document.head.appendChild(style);
+
+        // Show warning modal
+        setTimeout(() => {
+          ATCHMS.showModal('🚨 Profile Incomplete', 'Please update all your personal details (First Name, Last Name, Phone Number, Course, Year of Study, Gender) and upload a Profile Photo to activate your account.');
+        }, 500);
+
+        // Set inputs as required
+        document.getElementById('edit-first-name').required = true;
+        document.getElementById('edit-last-name').required = true;
+        document.getElementById('edit-phone').required = true;
+        document.getElementById('edit-program-type').required = true;
+        document.getElementById('edit-programme').required = true;
+        document.getElementById('edit-year').required = true;
+        document.getElementById('edit-gender').required = true;
+      }
+    });
+  });
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

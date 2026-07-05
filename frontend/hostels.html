@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Hostels — ATCHMS</title>
+<meta name="description" content="Browse all ATC hostels, room capacities and availability." />
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu" id="nav-menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="hostels.html" class="active">Hostels</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="login.html">Login</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="banner">
+  <h1>Our Hostels</h1>
+  <p>Explore ATC's on-campus accommodation blocks, each designed for comfort, safety and a vibrant student community.</p>
+  <div class="crumbs" id="crumbs-nav"><a href="index.html">Home</a> / Hostels</div>
+</section>
+
+<section class="section">
+  <div class="section-inner">
+    <div id="back-to-dash-container" style="display: none; margin-bottom: 24px; text-align: left;">
+      <a id="back-to-dash-link" href="dashboard.html" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+        ← Back to Dashboard
+      </a>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="panel" style="margin-bottom: 28px; padding: 20px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--dark);">🔍 Search Hostel</label>
+          <input type="text" id="search-input" class="form-control" placeholder="Search by block name..." style="width:100%; height:40px; padding:8px 12px; border:1px solid var(--border); border-radius:8px;" oninput="filterHostels()" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--dark);">👤 Gender Target</label>
+          <select id="gender-filter" class="form-control" style="width:100%; height:40px; border:1px solid var(--border); border-radius:8px; background:var(--white);" onchange="filterHostels()">
+            <option value="">All Genders</option>
+            <option value="male">Male Only</option>
+            <option value="female">Female Only</option>
+            <option value="co-ed">Co-ed</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--dark);">💰 Semester Fee</label>
+          <select id="price-filter" class="form-control" style="width:100%; height:40px; border:1px solid var(--border); border-radius:8px; background:var(--white);" onchange="filterHostels()">
+            <option value="">Any Price</option>
+            <option value="under-150">Under TSh 150,000</option>
+            <option value="150-250">TSh 150,000 - 250,000</option>
+            <option value="above-250">Above TSh 250,000</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px; color:var(--dark);">🔑 Status</label>
+          <select id="status-filter" class="form-control" style="width:100%; height:40px; border:1px solid var(--border); border-radius:8px; background:var(--white);" onchange="filterHostels()">
+            <option value="">Any Status</option>
+            <option value="active">Active / Available</option>
+            <option value="full">Full / Blocked</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="hostel-grid" id="hostels-grid">
+      <div style="grid-column: 1/-1;" class="loading-container">
+        <div class="spinner"></div>
+        <span>Loading hostels...</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  // Update header based on auth status
+  const navMenu = document.getElementById('nav-menu');
+  if (ATCHMS.isLoggedIn()) {
+    const isAdmin = ATCHMS.isAdmin();
+    const dashPage = isAdmin ? 'admin.html' : 'dashboard.html';
+    const dashLabel = isAdmin ? 'Admin Console' : 'Student Dashboard';
+
+    navMenu.innerHTML = `
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html" class="active">Hostels</a></li>
+      <li><a href="${dashPage}">${isAdmin ? 'Admin' : 'Dashboard'}</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;" class="btn btn-outline">Logout</a></li>
+    `;
+
+    // Show back to dashboard button
+    const backBtnContainer = document.getElementById('back-to-dash-container');
+    const backBtnLink = document.getElementById('back-to-dash-link');
+    if (backBtnContainer && backBtnLink) {
+      backBtnLink.href = dashPage;
+      backBtnLink.innerHTML = `← Back to ${dashLabel}`;
+      backBtnContainer.style.display = 'block';
+    }
+
+    // Update breadcrumbs
+    const crumbsNav = document.getElementById('crumbs-nav');
+    if (crumbsNav) {
+      crumbsNav.innerHTML = `<a href="index.html">Home</a> / <a href="${dashPage}">${isAdmin ? 'Admin' : 'Dashboard'}</a> / Hostels`;
+    }
+  } else {
+    navMenu.innerHTML = `
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html" class="active">Hostels</a></li>
+      <li><a href="login.html" class="btn btn-outline">Login</a></li>
+      <li><a href="register.html" class="btn btn-primary">Register</a></li>
+    `;
+  }
+
+  let allHostels = [];
+
+  async function loadHostels() {
+    try {
+      allHostels = await ATCHMS.api('/hostels');
+      renderHostels(allHostels);
+    } catch (err) {
+      console.error(err);
+      document.getElementById('hostels-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#c0392b;padding:24px;">Failed to load hostels: ${err.message}</div>`;
+    }
+  }
+
+  function renderHostels(list) {
+    const grid = document.getElementById('hostels-grid');
+    if (!list.length) {
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 40px; font-size: 14.5px;">🔍 No hostels match your filter criteria. Try adjusting the search or selectors.</div>';
+      return;
+    }
+    
+    grid.innerHTML = list.map(h => {
+      let actionBtn = '';
+      if (ATCHMS.isLoggedIn()) {
+        if (ATCHMS.isAdmin()) {
+          actionBtn = `<span style="color:var(--muted); font-size:13px; font-weight:600;">Admin View</span>`;
+        } else {
+          actionBtn = `<button class="btn btn-primary" onclick="applyHostel(${h.id})">Apply Now</button>`;
+        }
+      } else {
+        actionBtn = `<a href="login.html" class="btn btn-outline">Login to Apply</a>`;
+      }
+
+      return `
+        <div class="hostel-card">
+          <div class="hostel-img" style="background-image:url('atc-building.jpg');"></div>
+          <div class="hostel-body">
+            <h4 style="margin-bottom:8px;">${h.name}</h4>
+            <div class="hostel-meta" style="margin-bottom:12px; font-size:13px;">
+              <span style="text-transform: capitalize;">👤 ${h.gender_type}</span> · 
+              <span>🔑 ${h.status}</span>
+            </div>
+            <p style="margin-bottom:14px; font-size:14px; color:var(--text-light);">
+              ATC Hostel Block designed to support excellent student life with 24/7 security.
+            </p>
+            <div class="row" style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:700; color:var(--primary);">TSh ${parseFloat(h.fee_per_semester).toLocaleString()}</span>
+              ${actionBtn}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  window.filterHostels = () => {
+    const query = document.getElementById('search-input').value.toLowerCase().trim();
+    const gender = document.getElementById('gender-filter').value;
+    const price = document.getElementById('price-filter').value;
+    const status = document.getElementById('status-filter').value;
+
+    let filtered = allHostels;
+
+    if (query) {
+      filtered = filtered.filter(h => h.name.toLowerCase().includes(query));
+    }
+
+    if (gender) {
+      filtered = filtered.filter(h => h.gender_type.toLowerCase() === gender.toLowerCase());
+    }
+
+    if (price) {
+      filtered = filtered.filter(h => {
+        const fee = parseFloat(h.fee_per_semester);
+        if (price === 'under-150') return fee < 150000;
+        if (price === '150-250') return fee >= 150000 && fee <= 250000;
+        if (price === 'above-250') return fee > 250000;
+        return true;
+      });
+    }
+
+    if (status) {
+      filtered = filtered.filter(h => {
+        if (status === 'active') return h.status.toLowerCase() === 'active' || h.status.toLowerCase() === 'available';
+        if (status === 'full') return h.status.toLowerCase() === 'full' || h.status.toLowerCase() === 'blocked';
+        return true;
+      });
+    }
+
+    renderHostels(filtered);
+  };
+
+  window.applyHostel = async (hostelId) => {
+    try {
+      const res = await ATCHMS.api('/applications', {
+        method: 'POST',
+        body: JSON.stringify({ preferred_hostel_id: hostelId })
+      });
+      if (res.error) {
+        ATCHMS.alert(res.error, "Application Info");
+      } else {
+        ATCHMS.alert('✅ Application submitted successfully! View status in dashboard.', "Success").then(() => {
+          window.location.href = 'dashboard.html';
+        });
+      }
+    } catch {
+      ATCHMS.alert('Failed to submit application', "Error");
+    }
+  };
+
+  loadHostels();
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

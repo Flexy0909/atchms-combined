@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Maintenance — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .maint-form {
+    background: var(--white); border-radius: var(--radius);
+    padding: 28px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+  }
+  .maint-form h4 { color: var(--dark); margin-bottom: 18px; }
+  .maint-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+  .maint-row input, .maint-row select, .maint-row textarea {
+    flex: 1; min-width: 200px; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 14px; color: var(--text);
+    background: #fafdfb; outline: none; resize: vertical;
+    transition: border-color .2s ease;
+  }
+  .maint-row input:focus, .maint-row select:focus, .maint-row textarea:focus { border-color: var(--primary); }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Student Panel</h5><small>ATCHMS v2.6</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="dashboard.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="my-application.html"><span class="dot"></span> My Application</a></li>
+      <li><a href="room-details.html"><span class="dot"></span> Room Details</a></li>
+      <li><a href="payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="maintenance.html" class="active"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Browse Hostels</a></li>
+      <li><a href="contact.html"><span class="dot"></span> Support</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Maintenance Requests</h2>
+        <p>Submit issues and track repair progress for your room.</p>
+      </div>
+      <a href="#new-ticket" class="btn btn-primary">+ New Request</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="mini-stats">
+      <div class="mini-stat"><small>Open Tickets</small><h3 id="stat-open">0</h3><div class="delta">Active jobs</div></div>
+      <div class="mini-stat"><small>Resolved Tickets</small><h3 id="stat-resolved">0</h3><div class="delta">Completed</div></div>
+    </div>
+
+    <!-- Ticket History -->
+    <div class="panel" style="margin-bottom:24px;">
+      <h4>Your Maintenance Tickets</h4>
+      <div class="table-wrap" style="margin-top:12px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket #</th><th>Title</th><th>Submitted</th><th>Priority</th><th>Status</th><th>Resolved At</th>
+            </tr>
+          </thead>
+          <tbody id="tickets-tbody">
+            <tr><td colspan="6" style="text-align:center;">Loading maintenance tickets...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- New Ticket Form -->
+    <form class="maint-form" id="new-ticket-form">
+      <h4>Submit a New Request</h4>
+      <div class="maint-row">
+        <select id="priority" required>
+          <option value="" disabled selected>Priority level</option>
+          <option value="low">Low — Non-urgent</option>
+          <option value="medium">Medium — Inconvenient</option>
+          <option value="high">High — Urgent / Safety risk</option>
+        </select>
+      </div>
+      <div class="maint-row">
+        <input type="text" id="title" placeholder="Brief title (e.g. 'Broken window latch')" required />
+      </div>
+      <div class="maint-row">
+        <textarea id="description" rows="4" placeholder="Describe the issue in detail — include exact location in the room..." required></textarea>
+      </div>
+      <button type="submit" id="submit-btn" class="btn btn-primary" style="width:100%;">Submit Maintenance Request</button>
+    </form>
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  if (ATCHMS.requireStudent()) {
+    // Check if redirecting from Room Change request
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('type') === 'room-change') {
+      document.getElementById('priority').value = 'medium';
+      document.getElementById('title').value = 'Room Change Request';
+      document.getElementById('description').placeholder = 'Describe why you are requesting a room change, your preferred block/room number, and if this is a mutual swap.';
+      document.getElementById('description').value = 'Reason for Request: \n\nPreferred Block/Room: \n\nMutual Swap Student (if applicable): ';
+    }
+
+    async function loadTickets() {
+      try {
+        const tickets = await ATCHMS.api('/maintenance');
+        
+        const openCount = tickets.filter(t => t.status === 'open').length;
+        const resolvedCount = tickets.filter(t => t.status === 'resolved').length;
+
+        document.getElementById('stat-open').textContent = openCount;
+        document.getElementById('stat-resolved').textContent = resolvedCount;
+
+        const tbody = document.getElementById('tickets-tbody');
+        if (tickets.length > 0) {
+          tbody.innerHTML = tickets.map(t => `
+            <tr>
+              <td data-label="Ticket #">#MT-00${t.id}</td>
+              <td data-label="Issue">${t.title}</td>
+              <td data-label="Submitted">${ATCHMS.fmtDate(t.submitted_at)}</td>
+              <td data-label="Priority" style="text-transform: capitalize;"><span class="badge ${t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-gold' : 'badge-green'}">${t.priority}</span></td>
+              <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(t.status)}">${t.status}</span></td>
+              <td data-label="Resolved">${t.resolved_at ? ATCHMS.fmtDate(t.resolved_at) : '—'}</td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No maintenance tickets submitted yet.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById('new-ticket-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.textContent = 'Submitting...'; btn.disabled = true;
+
+      const payload = {
+        title: document.getElementById('title').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        priority: document.getElementById('priority').value
+      };
+
+      try {
+        const res = await ATCHMS.api('/maintenance', {
+          method: 'POST', body: JSON.stringify(payload)
+        });
+        if (res.error) {
+          ATCHMS.alert(res.error, "Error");
+        } else {
+          ATCHMS.alert('✅ Request submitted successfully!', "Success");
+          document.getElementById('new-ticket-form').reset();
+          loadTickets();
+        }
+      } catch {
+        ATCHMS.alert('Failed to submit request', "Error");
+      } finally {
+        btn.textContent = 'Submit Maintenance Request'; btn.disabled = false;
+      }
+    });
+
+    loadTickets();
+  }
+</script>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="dashboard.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="my-application.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Apply</span>
+  </a>
+  <a href="room-details.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Room</span>
+  </a>
+  <a href="payments.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="maintenance.html" class="bottom-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Maintenance</span>
+  </a>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

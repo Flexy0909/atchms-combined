@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Students — Admin — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .filter-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;
+  }
+  .filter-bar input, .filter-bar select {
+    padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 14px; background: var(--white); color: var(--text);
+    outline: none; transition: border-color .2s ease; flex: 1; min-width: 160px;
+  }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--primary); }
+  .action-btn {
+    padding: 6px 14px; border-radius: 8px; font-size: 12.5px;
+    font-weight: 600; cursor: pointer; border: none; font-family: inherit;
+    transition: all .2s ease;
+  }
+  .view-btn { background: var(--light); color: var(--primary); }
+  .view-btn:hover { background: var(--primary); color: #fff; }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="admin.html" class="active">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Admin Console</h5><small>Dean of Students</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="admin.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="admin-applications.html"><span class="dot"></span> Applications</a></li>
+      <li><a href="admin-students.html" class="active"><span class="dot"></span> Students</a></li>
+      <li><a href="admin-users.html"><span class="dot"></span> Users</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Hostels</a></li>
+      <li><a href="admin-rooms.html"><span class="dot"></span> Rooms</a></li>
+      <li><a href="admin-rules.html"><span class="dot"></span> Allocation Rules</a></li>
+      <li><a href="admin-payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="admin-maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="admin-reports.html"><span class="dot"></span> Reports</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Students</h2>
+        <p>All registered student accounts.</p>
+      </div>
+      <div>
+        <button class="btn btn-primary" onclick="openRegisterModal()">➕ Register User</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mini-stats">
+      <div class="mini-stat"><small>Total Students</small><h3 id="stat-total">0</h3><div class="delta">Registered</div></div>
+    </div>
+
+    <!-- Search and filter controls -->
+    <div class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      <input type="text" id="search-input" placeholder="Search by name, admission no, or phone..." oninput="filterStudents()" style="flex: 2; min-width: 200px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px;" />
+      <select id="programme-filter" onchange="filterStudents()" style="flex: 1; min-width: 160px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--white); color: var(--text);">
+        <option value="">All Programmes</option>
+      </select>
+      <select id="gender-filter" onchange="filterStudents()" style="flex: 1; min-width: 160px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--white); color: var(--text);">
+        <option value="">All Genders</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Admission #</th><th>Name</th><th>Programme</th><th>Year</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-tbody">
+            <tr>
+              <td colspan="6" style="padding: 24px 0; text-align: center;">
+                <div class="loading-container" style="padding: 0;">
+                  <div class="spinner" style="width: 22px; height: 22px; border-width: 2px;"></div>
+                  <span style="font-size: 13px;">Loading students...</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Register User Modal -->
+<div id="register-modal" class="atchms-modal-overlay" style="display:none;">
+  <div class="atchms-modal-box" style="max-width:550px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="margin:0; font-size:16px; color:var(--dark); font-weight:700;">Register New User</h3>
+      <button onclick="closeRegisterModal()" style="background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer;">&times;</button>
+    </div>
+    <form id="register-form" onsubmit="adminRegisterUser(event)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">First Name *</label>
+          <input type="text" id="reg-first-name" required placeholder="e.g. John" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Last Name *</label>
+          <input type="text" id="reg-last-name" required placeholder="e.g. Doe" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Middle Name (Optional)</label>
+          <input type="text" id="reg-middle-name" placeholder="e.g. Robert" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Email Address *</label>
+          <input type="email" id="reg-email" required placeholder="john@domain.com" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Phone Number *</label>
+          <input type="text" id="reg-phone" required placeholder="e.g. 0712345678" pattern="^0\d{9}$" title="Must be exactly 10 digits starting with 0" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Role *</label>
+          <select id="reg-role" onchange="toggleRegRoleFields()" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; background:var(--white);">
+            <option value="student">Student</option>
+            <option value="admin">Administrator / Warden</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Gender (For Rooms) *</label>
+          <select id="reg-gender" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; background:var(--white);">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+        <div id="student-only-fields" style="grid-column: span 2; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Admission Number *</label>
+            <input type="text" id="reg-admission-no" required placeholder="e.g. 25050512146" pattern="^[0-9]{11}$" title="Must be exactly 11 digits" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Academic Year *</label>
+            <input type="text" id="reg-year" placeholder="e.g. 2026/2027" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+          </div>
+          <div style="grid-column: span 2;">
+            <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Course / Programme *</label>
+            <input type="text" id="reg-programme" placeholder="e.g. Ordinary Diploma in Computer Science" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+          </div>
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:4px; color:var(--dark);">Temporary Password *</label>
+          <input type="text" id="reg-password" required placeholder="Type password..." minlength="6" style="width:100%; height:38px; padding:0 10px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;" />
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <button type="button" class="action-btn view-btn" onclick="closeRegisterModal()" style="margin-right:8px; height:38px;">Cancel</button>
+        <button type="submit" class="action-btn view-btn" id="reg-submit-btn" style="height:38px; background:var(--primary); color:#fff;">Register User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Student Details Modal -->
+<div id="student-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--white); border-radius:16px; width:100%; max-width:550px; box-shadow:0 8px 30px rgba(0,0,0,0.3); overflow:hidden;">
+    <div style="background:var(--primary); color:#fff; padding:20px; display:flex; justify-content:space-between; align-items:center;">
+      <h4 style="margin:0; font-size:16px;" id="modal-title">Student Profile Detail</h4>
+      <button onclick="closeStudentModal()" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer; line-height:1;">&times;</button>
+    </div>
+    <div style="padding:24px; max-height:70vh; overflow-y:auto;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; font-size:13.5px;" id="modal-details">
+        <!-- populated dynamically -->
+      </div>
+      
+      <div style="border-top:1px solid var(--border); padding-top:20px;">
+        <h5 style="margin:0 0 12px 0; color:var(--dark); font-size:14px; font-weight:700;">Override Account Password</h5>
+        <p style="font-size:12.5px; color:var(--muted); margin-bottom:14px;">Enter a new password to override this student's login credentials. Provide the new password to them.</p>
+        <form id="admin-reset-form" onsubmit="adminResetPassword(event)">
+          <input type="hidden" id="reset-student-id" />
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="reset-new-password" placeholder="Type new password..." required style="flex:1; height:40px; padding:0 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13.5px;" />
+            <button type="submit" class="action-btn view-btn" id="modal-reset-btn" style="height:40px; min-width:130px;">Update Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  let allStudents = [];
+
+  function openStudentModal(index) {
+    const s = allStudents[index];
+    document.getElementById('reset-student-id').value = s.id;
+    document.getElementById('reset-new-password').value = '';
+    document.getElementById('modal-title').textContent = `Student Profile: ${s.fullname}`;
+    
+    const initials = (s.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    const avatarHtml = s.avatar_url 
+      ? `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:16px;">
+          <img src="${s.avatar_url}" onclick="ATCHMS.previewImage('${s.avatar_url}')" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.15); cursor:pointer;" alt="Student Photo" />
+         </div>`
+      : `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:16px;">
+          <div style="width:100px; height:100px; border-radius:50%; background:var(--light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700; border:3px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.15);">${initials}</div>
+         </div>`;
+
+    document.getElementById('modal-details').innerHTML = avatarHtml + `
+      <div><strong>Full Name:</strong><br>${s.fullname}</div>
+      <div><strong>Email Address:</strong><br>${s.email}</div>
+      <div><strong>Admission No:</strong><br><span style="font-family:monospace;">${s.admission_no || 'N/A'}</span></div>
+      <div><strong>Phone Number:</strong><br>${s.phone_no || 'N/A'}</div>
+      <div><strong>Course / Programme:</strong><br>${s.programme || 'N/A'}</div>
+      <div><strong>Academic Year:</strong><br>${s.academic_year || 'N/A'}</div>
+      <div><strong>Preferred Hostel:</strong><br>${s.hostel_name || 'None'}</div>
+      <div><strong>Gender:</strong><br>${s.gender ? s.gender.toUpperCase() : 'N/A'}</div>
+      <div><strong>Allocation Status:</strong><br><span class="badge ${ATCHMS.badgeClass(s.application_status || 'pending')}">${s.application_status || 'None'}</span></div>
+      <div><strong>Registration Date:</strong><br>${ATCHMS.fmtDate(s.created_at)}</div>
+    `;
+    
+    document.getElementById('student-modal').style.display = 'flex';
+  }
+
+  function closeStudentModal() {
+    document.getElementById('student-modal').style.display = 'none';
+  }
+
+  async function adminResetPassword(e) {
+    e.preventDefault();
+    const student_id = document.getElementById('reset-student-id').value;
+    const new_password = document.getElementById('reset-new-password').value;
+    const btn = document.getElementById('modal-reset-btn');
+    
+    btn.textContent = 'Updating...';
+    btn.disabled = true;
+    try {
+      const res = await ATCHMS.api('/admin/reset-student-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id, new_password })
+      });
+      if (res.error) {
+        alert('Error: ' + res.error);
+      } else {
+        alert('✅ Password updated successfully! Provide this new password to the student.');
+        closeStudentModal();
+      }
+    } catch(err) {
+      alert('Error updating password: ' + err.message);
+    } finally {
+      btn.textContent = 'Update Password';
+      btn.disabled = false;
+    }
+  }
+
+  window.openRegisterModal = () => {
+    const modal = document.getElementById('register-modal');
+    modal.style.display = 'grid';
+    setTimeout(() => modal.classList.add('active'), 10);
+    document.getElementById('reg-password').value = 'ATC' + Math.floor(100000 + Math.random() * 900000);
+  };
+
+  window.closeRegisterModal = () => {
+    const modal = document.getElementById('register-modal');
+    modal.classList.remove('active');
+    setTimeout(() => modal.style.display = 'none', 250);
+  };
+
+  window.toggleRegRoleFields = () => {
+    const role = document.getElementById('reg-role').value;
+    const studentFields = document.getElementById('student-only-fields');
+    const admissionInput = document.getElementById('reg-admission-no');
+    
+    if (role === 'admin') {
+      studentFields.style.display = 'none';
+      admissionInput.removeAttribute('required');
+    } else {
+      studentFields.style.display = 'grid';
+      admissionInput.setAttribute('required', 'required');
+    }
+  };
+
+  function renderStudentsList(list) {
+    const tbody = document.getElementById('students-tbody');
+    if (list.length > 0) {
+      tbody.innerHTML = list.map((s) => {
+        const idx = allStudents.findIndex(x => x.id === s.id);
+        const initials = (s.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+        const avatarHtml = s.avatar_url 
+          ? `<img src="${s.avatar_url}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; border:1.5px solid var(--border);" alt="" />`
+          : `<span style="width:30px; height:30px; border-radius:50%; background:var(--light); color:var(--primary); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:1.5px solid var(--border);">${initials}</span>`;
+
+        return `
+          <tr>
+            <td data-label="Admission">${s.admission_no || 'N/A'}</td>
+            <td data-label="Name">
+              <div style="display:flex; align-items:center; gap:8px;">
+                ${avatarHtml}
+                <strong>${s.fullname}</strong>
+              </div>
+            </td>
+            <td data-label="Programme">${s.programme || 'N/A'}</td>
+            <td data-label="Year">${s.academic_year || 'N/A'}</td>
+            <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(s.application_status || 'pending')}">${s.application_status || 'None'}</span></td>
+            <td data-label="Action">
+              <button class="action-btn view-btn" onclick="openStudentModal(${idx})">Manage Profile</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No students found.</td></tr>';
+    }
+  }
+
+  window.filterStudents = () => {
+    const query = document.getElementById('search-input').value.toLowerCase().trim();
+    const prog = document.getElementById('programme-filter').value;
+    const gender = document.getElementById('gender-filter').value;
+
+    const filtered = allStudents.filter(s => {
+      const matchesSearch = !query || 
+        (s.fullname && s.fullname.toLowerCase().includes(query)) ||
+        (s.admission_no && s.admission_no.toLowerCase().includes(query)) ||
+        (s.phone_no && s.phone_no.toLowerCase().includes(query));
+
+      const matchesProg = !prog || s.programme === prog;
+      const matchesGender = !gender || (s.gender && s.gender.toLowerCase() === gender.toLowerCase());
+
+      return matchesSearch && matchesProg && matchesGender;
+    });
+
+    renderStudentsList(filtered);
+  };
+
+  window.adminRegisterUser = async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('reg-submit-btn');
+    btn.textContent = 'Registering...';
+    btn.disabled = true;
+
+    const first_name = document.getElementById('reg-first-name').value;
+    const last_name = document.getElementById('reg-last-name').value;
+    const middle_name = document.getElementById('reg-middle-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone_no = document.getElementById('reg-phone').value;
+    const role = document.getElementById('reg-role').value;
+    const gender = document.getElementById('reg-gender').value;
+    const admission_no = document.getElementById('reg-admission-no').value;
+    const academic_year = document.getElementById('reg-year').value;
+    const programme = document.getElementById('reg-programme').value;
+    const password = document.getElementById('reg-password').value;
+
+    try {
+      const res = await ATCHMS.api('/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name, middle_name, last_name, email, phone_no, role, gender,
+          admission_no, academic_year, programme, password
+        })
+      });
+
+      if (res.error) {
+        alert('Error: ' + res.error);
+      } else {
+        alert('✅ User registered successfully!');
+        closeRegisterModal();
+        loadStudents();
+      }
+    } catch (err) {
+      alert('Failed: ' + err.message);
+    } finally {
+      btn.textContent = 'Register User';
+      btn.disabled = false;
+    }
+  };
+
+  function populateProgrammesDropdown(students) {
+    const select = document.getElementById('programme-filter');
+    const progs = [...new Set(students.map(s => s.programme).filter(Boolean))].sort();
+    select.innerHTML = '<option value="">All Programmes</option>' + progs.map(p => `<option value="${p}">${p}</option>`).join('');
+  }
+
+  if (ATCHMS.requireAdmin()) {
+    async function loadStudents() {
+      try {
+        const students = await ATCHMS.api('/students');
+        allStudents = students;
+        document.getElementById('stat-total').textContent = students.length;
+        populateProgrammesDropdown(students);
+        renderStudentsList(students);
+      } catch (err) {
+        console.error('Error loading students:', err);
+      }
+    }
+    loadStudents();
+  }
+</script>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="admin.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Overview</span>
+  </a>
+  <a href="admin-applications.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Applications</span>
+  </a>
+  <a href="admin-rooms.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Rooms</span>
+  </a>
+  <a href="admin-payments.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="admin-maintenance.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Tickets</span>
+  </a>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

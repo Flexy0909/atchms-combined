@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Student Dashboard — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Student Panel</h5><small>ATCHMS v2.6</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="dashboard.html" class="active"><span class="dot"></span> Overview</a></li>
+      <li><a href="my-application.html"><span class="dot"></span> My Application</a></li>
+      <li><a href="room-details.html"><span class="dot"></span> Room Details</a></li>
+      <li><a href="payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Browse Hostels</a></li>
+      <li><a href="profile.html"><span class="dot"></span> My Profile</a></li>
+      <li><a href="contact.html"><span class="dot"></span> Support</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Welcome back, <span id="user-greeting">Student</span></h2>
+        <p>Here is the latest on your ATC hostel accommodation.</p>
+      </div>
+      <a href="hostels.html" class="btn btn-primary">Browse Hostels</a>
+    </div>
+
+    <div class="mini-stats">
+      <div class="mini-stat"><small>Application</small><h3 id="stat-app-status">None</h3><div class="delta" id="stat-app-date">—</div></div>
+      <div class="mini-stat"><small>Room</small><h3 id="stat-room">None</h3><div class="delta" id="stat-room-details">Not Allocated</div></div>
+      <div class="mini-stat"><small>Hostel Fees</small><h3 id="stat-fees">TSh 0</h3><div class="delta" id="stat-fees-status">Unpaid</div></div>
+      <div class="mini-stat"><small>Maintenance</small><h3 id="stat-tickets">0 Open</h3><div class="delta">All resolved</div></div>
+    </div>
+
+    <div class="dash-grid">
+      <div>
+        <div class="profile-card" style="margin-bottom:24px;">
+          <a href="profile.html" id="user-avatar" class="avatar" title="Edit Profile" style="text-decoration:none;cursor:pointer;">??</a>
+          <div style="flex:1; width: 100%;">
+            <h4 id="user-fullname" style="font-size: 20px; font-weight: 700; color: var(--dark);">Loading...</h4>
+            <div class="profile-details">
+              <div class="detail-item">
+                <span class="detail-label">Admission Number</span>
+                <span class="detail-value" id="user-admission">—</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Programme</span>
+                <span class="detail-value" id="user-programme">—</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Academic Year</span>
+                <span class="detail-value" id="user-year">—</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Email Address</span>
+                <span class="detail-value" id="user-email">—</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Phone Number</span>
+                <span class="detail-value" id="user-phone">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:24px;">
+          <h4>Hostel Allocation Details</h4>
+          <div class="table-wrap" style="margin-top:8px;">
+            <table class="details-table">
+              <thead><tr><th>Field</th><th>Details</th></tr></thead>
+              <tbody>
+                <tr><td>Hostel Block</td><td id="alloc-hostel">—</td></tr>
+                <tr><td>Room Number</td><td id="alloc-room">—</td></tr>
+                <tr><td>Academic Year</td><td id="alloc-year">—</td></tr>
+                <tr><td>Allocated On</td><td id="alloc-date">—</td></tr>
+                <tr><td>Status</td><td><span class="badge" id="alloc-status-badge">—</span></td></tr>
+                <tr><td>Lease End</td><td id="alloc-lease-end">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h4>Recent Payments / Control Numbers</h4>
+          <div class="table-wrap" style="margin-top:8px;">
+            <table>
+              <thead><tr><th>Control Number</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody id="payments-tbody">
+                <tr>
+                  <td colspan="4" style="padding: 24px 0; text-align: center;">
+                    <div class="loading-container" style="padding: 0;">
+                      <div class="spinner" style="width: 22px; height: 22px; border-width: 2px;"></div>
+                      <span style="font-size: 13px;">Loading payments...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <aside>
+        <div class="panel" style="margin-bottom:24px;">
+          <h4>My Applications</h4>
+          <div class="table-wrap" style="margin-top:8px;">
+            <table>
+              <thead><tr><th>Hostel</th><th>Status</th></tr></thead>
+              <tbody id="app-tbody">
+                <tr>
+                  <td colspan="2" style="padding: 24px 0; text-align: center;">
+                    <div class="loading-container" style="padding: 0;">
+                      <div class="spinner" style="width: 22px; height: 22px; border-width: 2px;"></div>
+                      <span style="font-size: 13px;">Loading applications...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h4>Quick Contacts</h4>
+          <ul class="notif">
+            <li><span class="pill"></span><div><strong>Dean of Students</strong><small>dean@atc.ac.tz</small></div></li>
+            <li><span class="pill"></span><div><strong>Security Desk</strong><small>+255 700 000 000</small></div></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  // Ensure user is logged in
+  if (ATCHMS.requireStudent()) {
+
+    // Show cached user data immediately while API loads
+    const cached = ATCHMS.getUser();
+
+    function setAvatar(el, p) {
+      if (p.avatar_url) {
+        el.innerHTML = `<img src="${p.avatar_url}?t=${Date.now()}" alt="Avatar" />`;
+      } else {
+        el.textContent = (p.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      }
+    }
+
+    if (cached) {
+      document.getElementById('user-greeting').textContent = cached.fullname.split(' ')[0];
+      document.getElementById('user-fullname').textContent = cached.fullname;
+      setAvatar(document.getElementById('user-avatar'), cached);
+      document.getElementById('user-admission').textContent = cached.admission_no || 'N/A';
+      document.getElementById('user-programme').textContent = cached.programme || 'N/A';
+      document.getElementById('user-year').textContent = cached.academic_year || 'N/A';
+      document.getElementById('user-email').textContent = cached.email || 'N/A';
+      document.getElementById('user-phone').textContent = cached.phone_no || 'N/A';
+    }
+
+    // Load all live data from API
+    async function loadDashboardData() {
+      try {
+
+        // 1. Refresh profile from server (fixes stale mock data)
+        const profile = await ATCHMS.api('/auth/profile');
+        if (profile && !profile.error) {
+          // Update sessionStorage with fresh data
+          sessionStorage.setItem('atchms_user', JSON.stringify({ ...cached, ...profile }));
+          document.getElementById('user-greeting').textContent = profile.fullname.split(' ')[0];
+          document.getElementById('user-fullname').textContent = profile.fullname;
+          setAvatar(document.getElementById('user-avatar'), profile);
+          document.getElementById('user-admission').textContent = profile.admission_no || 'N/A';
+          document.getElementById('user-programme').textContent = profile.programme || 'N/A';
+          document.getElementById('user-year').textContent = profile.academic_year || 'N/A';
+          document.getElementById('user-email').textContent = profile.email || 'N/A';
+          document.getElementById('user-phone').textContent = profile.phone_no || 'N/A';
+        }
+
+        // 2. Load Applications
+        const apps = await ATCHMS.api('/applications');
+        const appTbody = document.getElementById('app-tbody');
+        if (apps && apps.length > 0) {
+          appTbody.innerHTML = apps.map(a => `
+            <tr>
+              <td data-label="Preferred Hostel">${a.hostel_name}</td>
+              <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(a.status)}">${a.status}</span></td>
+            </tr>
+          `).join('');
+          const latestApp = apps[0];
+          document.getElementById('stat-app-status').textContent = latestApp.status.toUpperCase();
+          document.getElementById('stat-app-date').textContent = ATCHMS.fmtDate(latestApp.submitted_date);
+        } else {
+          appTbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:var(--muted);">No application records found.</td></tr>`;
+        }
+
+        // 3. Load Allocation / Room Details
+        const alloc = await ATCHMS.api('/allocations/mine');
+        if (alloc && !alloc.error && alloc.id) {
+          document.getElementById('stat-room').textContent = alloc.room_number || '—';
+          document.getElementById('stat-room-details').textContent = alloc.hostel_name || 'Allocated';
+          document.getElementById('alloc-hostel').textContent = alloc.hostel_name || '—';
+          document.getElementById('alloc-room').textContent = alloc.room_number || '—';
+          document.getElementById('alloc-year').textContent = alloc.academic_year || '—';
+          document.getElementById('alloc-date').textContent = ATCHMS.fmtDate(alloc.allocated_on);
+          document.getElementById('alloc-lease-end').textContent = ATCHMS.fmtDate(alloc.lease_end_date);
+          const badge = document.getElementById('alloc-status-badge');
+          badge.textContent = alloc.status || 'active';
+          badge.className = `badge ${ATCHMS.badgeClass(alloc.status || 'active')}`;
+        } else {
+          document.getElementById('stat-room').textContent = 'None';
+          document.getElementById('stat-room-details').textContent = 'Not Allocated';
+        }
+
+        // 4. Load Payments
+        const payments = await ATCHMS.api('/payments');
+        const payTbody = document.getElementById('payments-tbody');
+        if (payments && payments.length > 0) {
+          payTbody.innerHTML = payments.map(p => `
+            <tr>
+              <td data-label="Control #"><code>${p.control_number}</code></td>
+              <td data-label="Type">${p.payment_type}</td>
+              <td data-label="Amount">TSh ${parseFloat(p.amount).toLocaleString()}</td>
+              <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(p.status)}">${p.status}</span></td>
+            </tr>
+          `).join('');
+          const totalPaid = payments.filter(p => p.status === 'paid').reduce((acc, p) => acc + parseFloat(p.amount), 0);
+          document.getElementById('stat-fees').textContent = `TSh ${totalPaid.toLocaleString()}`;
+          document.getElementById('stat-fees-status').textContent = payments.some(p => p.status === 'pending') ? 'Pending payment' : 'All clear';
+        } else {
+          payTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--muted);">No payment records found.</td></tr>`;
+        }
+
+        // 5. Load Maintenance count
+        const tickets = await ATCHMS.api('/maintenance');
+        if (tickets && tickets.length > 0) {
+          const open = tickets.filter(t => t.status === 'open' || t.status === 'in-progress').length;
+          document.getElementById('stat-tickets').textContent = `${open} Open`;
+        }
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      }
+    }
+
+    loadDashboardData();
+  }
+</script>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="dashboard.html" class="bottom-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="my-application.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Apply</span>
+  </a>
+  <a href="room-details.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Room</span>
+  </a>
+  <a href="payments.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="maintenance.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Maintenance</span>
+  </a>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

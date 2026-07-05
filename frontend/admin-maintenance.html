@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Maintenance — Admin — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .action-btn {
+    padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; font-family: inherit; transition: all .2s ease;
+  }
+  .resolve-btn { background: #d6f1e3; color: #0a5b3a; }
+  .resolve-btn:hover { background: #0a5b3a; color: #fff; }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="admin.html" class="active">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Admin Console</h5><small>Dean of Students</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="admin.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="admin-applications.html"><span class="dot"></span> Applications</a></li>
+      <li><a href="admin-students.html"><span class="dot"></span> Students</a></li>
+      <li><a href="admin-users.html"><span class="dot"></span> Users</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Hostels</a></li>
+      <li><a href="admin-rooms.html"><span class="dot"></span> Rooms</a></li>
+      <li><a href="admin-rules.html"><span class="dot"></span> Allocation Rules</a></li>
+      <li><a href="admin-payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="admin-maintenance.html" class="active"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="admin-reports.html"><span class="dot"></span> Reports</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Maintenance board</h2>
+        <p>All hostel maintenance requests — track and resolve.</p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mini-stats">
+      <div class="mini-stat"><small>Open Tickets</small><h3 id="stat-open">0</h3><div class="delta">Needs repair</div></div>
+      <div class="mini-stat"><small>Resolved</small><h3 id="stat-resolved">0</h3><div class="delta">Completed</div></div>
+    </div>
+
+    <!-- Search and filter controls -->
+    <div class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      <input type="text" id="search-input" placeholder="Search by student, admission #, title, or description..." oninput="filterTickets()" style="flex: 2; min-width: 200px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px;" />
+      <select id="status-filter" onchange="filterTickets()" style="flex: 1; min-width: 160px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--white); color: var(--text);">
+        <option value="">All Statuses</option>
+        <option value="open">Open</option>
+        <option value="resolved">Resolved</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket #</th><th>Issue</th><th>Student</th><th>Admission</th><th>Submitted</th><th>Priority</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tickets-tbody">
+            <tr><td colspan="8" style="text-align:center;">Loading maintenance requests...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  if (ATCHMS.requireAdmin()) {
+    let allTickets = [];
+
+    function renderTicketsList(list) {
+      const tbody = document.getElementById('tickets-tbody');
+      if (list.length > 0) {
+        tbody.innerHTML = list.map(t => `
+          <tr>
+            <td data-label="Ticket #">#MT-00${t.id}</td>
+            <td data-label="Issue"><strong>${t.title}</strong><br><small>${t.description}</small></td>
+            <td data-label="Student">${t.fullname}</td>
+            <td data-label="Admission">${t.admission_no || 'N/A'}</td>
+            <td data-label="Submitted">${ATCHMS.fmtDate(t.submitted_at)}</td>
+            <td data-label="Priority" style="text-transform: capitalize;"><span class="badge ${t.priority === 'high' ? 'badge-red' : t.priority === 'medium' ? 'badge-gold' : 'badge-green'}">${t.priority}</span></td>
+            <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(t.status)}">${t.status}</span></td>
+            <td data-label="Action">
+              ${t.status === 'open' ? `
+                <button class="action-btn resolve-btn" onclick="resolveTicket(${t.id})">Resolve</button>
+              ` : `
+                <span style="color:var(--muted); font-size:12px;">Completed</span>
+              `}
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No maintenance requests found.</td></tr>';
+      }
+    }
+
+    window.filterTickets = () => {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const status = document.getElementById('status-filter').value;
+
+      const filtered = allTickets.filter(t => {
+        const matchesSearch = !query ||
+          (t.fullname && t.fullname.toLowerCase().includes(query)) ||
+          (t.admission_no && t.admission_no.toLowerCase().includes(query)) ||
+          (t.title && t.title.toLowerCase().includes(query)) ||
+          (t.description && t.description.toLowerCase().includes(query));
+
+        const matchesStatus = !status || t.status === status;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      renderTicketsList(filtered);
+    };
+
+    async function loadTickets() {
+      try {
+        const tickets = await ATCHMS.api('/maintenance');
+        allTickets = tickets;
+        
+        const openCount = tickets.filter(t => t.status === 'open').length;
+        const resolvedCount = tickets.filter(t => t.status === 'resolved').length;
+
+        document.getElementById('stat-open').textContent = openCount;
+        document.getElementById('stat-resolved').textContent = resolvedCount;
+
+        renderTicketsList(tickets);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.resolveTicket = async (id) => {
+      const confirmed = await ATCHMS.confirm("Are you sure you want to mark this repair ticket as resolved?", "Resolve Ticket");
+      if (!confirmed) return;
+
+      try {
+        const res = await ATCHMS.api(`/maintenance/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: 'resolved' })
+        });
+        if (res.success) {
+          loadTickets();
+        } else {
+          ATCHMS.alert(res.error || 'Failed to update ticket', "Error");
+        }
+      } catch {
+        ATCHMS.alert('Server error', "Error");
+      }
+    };
+
+    loadTickets();
+  }
+</script>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="admin.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Overview</span>
+  </a>
+  <a href="admin-applications.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Applications</span>
+  </a>
+  <a href="admin-rooms.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Rooms</span>
+  </a>
+  <a href="admin-payments.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="admin-maintenance.html" class="bottom-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Tickets</span>
+  </a>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

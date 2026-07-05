@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Interactive Room Designer — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<style>
+  /* Room Designer Custom Styling */
+  .designer-container {
+    display: grid;
+    grid-template-columns: 240px 1fr 320px;
+    height: calc(100vh - 70px);
+    overflow: hidden;
+  }
+  
+  .designer-sidebar {
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  
+  .designer-canvas-area {
+    background: #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .designer-right-panel {
+    background: var(--white);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .canvas-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+    position: relative;
+  }
+
+  .canvas-container-custom {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+  
+  .designer-toolbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .palette-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  
+  .palette-item:hover {
+    background: #f1f5f9;
+    border-color: var(--primary);
+    transform: translateY(-1px);
+  }
+  
+  .palette-item:active {
+    cursor: grabbing;
+  }
+  
+  .palette-icon {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .properties-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .three-preview-container {
+    flex: 1;
+    background: #0f172a;
+    position: relative;
+    min-height: 250px;
+  }
+  
+  .three-canvas-el {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  
+  .panel-title {
+    font-weight: 700;
+    color: var(--dark);
+    font-size: 13.5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  
+  .badge-vip {
+    background: #fef3c7;
+    color: #d97706;
+    border: 1px solid #fcd34d;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  
+  .badge-window {
+    background: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Undo/Redo & Save Buttons styling */
+  .action-icon-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--white);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 15px;
+  }
+  
+  .action-icon-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  
+  .action-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Bed selection dialog */
+  .bed-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  
+  .bed-modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .bed-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+    transform: translateY(20px);
+    transition: transform 0.25s ease;
+  }
+  
+  .bed-modal-overlay.active .bed-modal-box {
+    transform: translateY(0);
+  }
+  
+  .bed-option-card {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+  }
+  
+  .bed-option-card:hover {
+    border-color: var(--primary);
+    background: #f0fdf4;
+  }
+
+  .grid-ruler {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    pointer-events: none;
+    color: var(--text-light);
+  }
+  
+  @media(max-width: 1024px) {
+    .designer-container {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto 1fr auto;
+      height: auto;
+      overflow: visible;
+    }
+    .designer-sidebar {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      flex-direction: row;
+      overflow-x: auto;
+    }
+    .designer-right-panel {
+      border-left: none;
+      border-top: 1px solid var(--border);
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <ul class="menu">
+      <li><a href="admin-rooms.html" class="btn btn-outline" style="padding: 6px 12px; font-size:13px; text-decoration:none;">← Back to Rooms</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="designer-toolbar">
+  <div style="display:flex; align-items:center; gap:16px;">
+    <div>
+      <h2 id="room-title" style="font-size:18px; font-weight:700; color:var(--dark); margin:0;">Loading Room Info...</h2>
+      <p id="room-subtitle" style="font-size:12px; color:var(--muted); margin:0;">Block Mount Meru Hall · Capacity: 2 beds</p>
+    </div>
+  </div>
+  
+  <div style="display:flex; align-items:center; gap:12px;">
+    <!-- Undo / Redo -->
+    <div style="display:flex; gap:6px; border-right: 1px solid var(--border); padding-right:12px;">
+      <button class="action-icon-btn" id="btn-undo" onclick="undo()" title="Undo" disabled>↩</button>
+      <button class="action-icon-btn" id="btn-redo" onclick="redo()" title="Redo" disabled>↪</button>
+    </div>
+    
+    <!-- Templates -->
+    <select id="template-select" class="form-control" style="width:160px; height:36px; border-radius:8px;" onchange="loadTemplate(this.value)">
+      <option value="">Load Template...</option>
+      <option value="standard2">2-Bed Standard</option>
+      <option value="standard4">4-Bed Standard</option>
+      <option value="lshape4">4-Bed L-Shape</option>
+      <option value="dorm6">6-Bed Dormitory</option>
+    </select>
+    
+    <button class="btn btn-outline" onclick="clearCanvas()" style="height:36px; display:inline-flex; align-items:center; justify-content:center;">Clear</button>
+    <button class="btn btn-primary" onclick="saveLayout()" style="height:36px; display:inline-flex; align-items:center; justify-content:center;">Save Layout</button>
+  </div>
+</div>
+
+<div class="designer-container">
+  <!-- Left Palette Sidebar -->
+  <aside class="designer-sidebar">
+    <div class="panel-title">Asset Palette</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:8px;">Drag objects to the grid, or click to add them instantly.</p>
+    
+    <div class="palette-item" onclick="addAssetDirect('bed')" draggable="true" ondragstart="handleDragStart(event, 'bed')">
+      <div class="palette-icon">🛏</div>
+      <div>
+        <strong style="display:block; font-size:13px;">Bed</strong>
+        <span style="font-size:11px; color:var(--text-light);">Single / Bunk Bed</span>
+      </div>
+    </div>
+    
+    <div class="palette-item" onclick="addAssetDirect('table')" draggable="true" ondragstart="handleDragStart(event, 'table')">
+      <div class="palette-icon">🪵</div>
+      <div>
+        <strong style="display:block; font-size:13px;">Study Desk</strong>
+        <span style="font-size:11px; color:var(--text-light);">Wooden Table</span>
+      </div>
+    </div>
+    
+    <div class="palette-item" onclick="addAssetDirect('chair')" draggable="true" ondragstart="handleDragStart(event, 'chair')">
+      <div class="palette-icon">🪑</div>
+      <div>
+        <strong style="display:block; font-size:13px;">Chair</strong>
+        <span style="font-size:11px; color:var(--text-light);">Desk Chair</span>
+      </div>
+    </div>
+    
+    <div class="palette-item" onclick="addAssetDirect('cupboard')" draggable="true" ondragstart="handleDragStart(event, 'cupboard')">
+      <div class="palette-icon">🚪</div>
+      <div>
+        <strong style="display:block; font-size:13px;">Cupboard</strong>
+        <span style="font-size:11px; color:var(--text-light);">Wardrobe Cabinet</span>
+      </div>
+    </div>
+  </aside>
+  
+  <!-- Canvas Center Area -->
+  <div class="designer-canvas-area" ondragover="allowDrop(event)" ondrop="handleDrop(event)">
+    <div class="canvas-wrapper">
+      <div class="canvas-container-custom">
+        <canvas id="layout-canvas" width="600" height="400"></canvas>
+      </div>
+      <div class="grid-ruler">Grid Unit: 20px · Snapped</div>
+    </div>
+  </div>
+  
+  <!-- Right Properties & 3D Panel -->
+  <aside class="designer-right-panel">
+    <!-- Properties Panel -->
+    <div class="properties-section" id="properties-panel">
+      <div class="panel-title">Properties Panel</div>
+      <div id="no-item-selected" style="color:var(--muted); text-align:center; padding:16px; font-size:13px;">
+        Click any placed asset on the grid to edit its details here.
+      </div>
+      
+      <div id="item-properties" style="display:none;">
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Asset ID & Label</label>
+          <input type="text" id="prop-label" class="form-control" oninput="updateSelectedProp('label', this.value)" style="width:100%;" />
+        </div>
+        
+        <div id="prop-bed-type-group" style="margin-bottom:12px; display:none;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Bed Type</label>
+          <select id="prop-bed-type" class="form-control" onchange="updateSelectedProp('bed_type', this.value)" style="width:100%;">
+            <option value="single">Single Bed</option>
+            <option value="bunk">Double Decker (Bunk Bed)</option>
+          </select>
+        </div>
+        
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Preferences & Tags</label>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="prop-vip" onchange="updateSelectedProp('vip', this.checked)" /> ⭐ VIP Bed / Premium location
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+              <input type="checkbox" id="prop-window" onchange="updateSelectedProp('near_window', this.checked)" /> 🪟 Near Window / Well lit
+            </label>
+          </div>
+        </div>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button class="btn btn-outline" onclick="rotateSelected(90)" style="padding:8px; font-size:12.5px;">Rotate 90°</button>
+          <button class="btn btn-outline" onclick="deleteSelected()" style="padding:8px; font-size:12.5px; border-color:#fca5a5; color:#ef4444; background:#fef2f2;">Delete</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 3D Preview Panel -->
+    <div style="display:flex; flex-direction:column; flex:1; overflow:hidden;">
+      <div style="padding:10px 16px; border-bottom: 1px solid var(--border); background:var(--white); display:flex; justify-content:space-between; align-items:center;">
+        <span class="panel-title" style="margin:0;">3D Real-time view</span>
+        <span style="font-size:10px; color:#10b981; font-weight:700; display:flex; align-items:center; gap:4px;">
+          <span style="width:6px; height:6px; background:#10b981; border-radius:50%;"></span> ACTIVE
+        </span>
+      </div>
+      <div class="three-preview-container" id="three-preview-box">
+        <!-- Three JS Target -->
+        <canvas class="three-canvas-el" id="three-preview-canvas"></canvas>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Bed Type Selector Dialog -->
+<div class="bed-modal-overlay" id="bed-selection-modal">
+  <div class="bed-modal-box">
+    <h3 style="font-size:16px; font-weight:700; color:var(--dark); margin-bottom:16px; text-align:center;">Select Bed Configuration</h3>
+    
+    <div class="bed-option-card" onclick="chooseBedType('single')">
+      <div style="font-size:24px;">🛏</div>
+      <div>
+        <strong style="display:block; font-size:14px; color:var(--dark);">Single Bed</strong>
+        <span style="font-size:12px; color:var(--text-light);">1 allocation capacity (Standard comfort).</span>
+      </div>
+    </div>
+    
+    <div class="bed-option-card" onclick="chooseBedType('bunk')">
+      <div style="font-size:24px;">🪜</div>
+      <div>
+        <strong style="display:block; font-size:14px; color:var(--dark);">Double Decker (Bunk Bed)</strong>
+        <span style="font-size:12px; color:var(--text-light);">2 allocation capacity (Upper & Lower).</span>
+      </div>
+    </div>
+    
+    <div style="text-align:right; margin-top:16px;">
+      <button class="btn btn-outline" onclick="closeBedModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load scripts from CDNs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="api.js?v=2.6"></script>
+
+<script>
+  let canvas;
+  let roomId = null;
+  let roomDetails = null;
+  let undoStack = [];
+  let redoStack = [];
+  let selectedObject = null;
+  let isSavingState = true;
+  
+  // Drag and Drop state helper
+  let currentDragType = null;
+  let modalResolve = null;
+
+  // Three JS references
+  let scene, camera, renderer, controls;
+  let threeContainer;
+  let modelGroup; // Holds all 3D furniture meshes
+  
+  // Grid parameters
+  const gridSize = 20;
+
+  // Dimensions configuration mapping
+  const assetSizes = {
+    single_bed: { width: 50, height: 90, color: '#93c5fd', outline: '#3b82f6', icon: '🛏' },
+    bunk_bed: { width: 50, height: 90, color: '#ddd6fe', outline: '#7c3aed', icon: '🪜' },
+    table: { width: 45, height: 35, color: '#fbcfe8', outline: '#db2777', icon: '🪵' },
+    chair: { width: 25, height: 25, color: '#fef08a', outline: '#ca8a04', icon: '🪑' },
+    cupboard: { width: 55, height: 35, color: '#fed7aa', outline: '#ea580c', icon: '🚪' }
+  };
+
+  // 1. Initialize Page & Authenticate
+  window.addEventListener('DOMContentLoaded', async () => {
+    if (!ATCHMS.requireAdmin()) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    roomId = params.get('room_id');
+    
+    if (!roomId) {
+      alert('No room ID provided.');
+      window.location.href = 'admin-rooms.html';
+      return;
+    }
+    
+    // Setup Fabric Canvas
+    initFabricCanvas();
+
+    // Setup 3D Scene
+    init3D();
+    
+    // Load Data
+    await loadRoomData();
+  });
+
+  // 2. Fetch Room Details & Layout JSON
+  async function loadRoomData() {
+    try {
+      roomDetails = await ATCHMS.api(`/rooms/${roomId}/details`);
+      const layoutData = await ATCHMS.api(`/rooms/${roomId}/layout`);
+      
+      document.getElementById('room-title').textContent = `${roomDetails.room.hostel_name} · Room ${roomDetails.room.room_number}`;
+      document.getElementById('room-subtitle').textContent = `Gender target: ${roomDetails.room.gender_type} · Max capacity: ${roomDetails.room.capacity} students`;
+      
+      if (layoutData && layoutData.layout) {
+        importLayoutJSON(layoutData.layout);
+      } else {
+        // Load default layout templates based on capacity
+        if (roomDetails.room.capacity === 2) {
+          loadTemplate('standard2');
+        } else if (roomDetails.room.capacity === 4) {
+          loadTemplate('standard4');
+        } else {
+          loadTemplate('dorm6');
+        }
+      }
+      
+      saveState(); // initial save point
+    } catch (e) {
+      console.error(e);
+      document.getElementById('room-title').textContent = "Failed to load room details";
+    }
+  }
+
+  // 3. Fabric.js Canvas Configuration
+  function initFabricCanvas() {
+    canvas = new fabric.Canvas('layout-canvas', {
+      backgroundColor: '#ffffff',
+      selection: true,
+      preserveObjectStacking: true
+    });
+    
+    // Draw grid background
+    drawGrid();
+    
+    // Setup snap to grid on move/scale
+    canvas.on('object:moving', function(options) {
+      options.target.set({
+        left: Math.round(options.target.left / gridSize) * gridSize,
+        top: Math.round(options.target.top / gridSize) * gridSize
+      });
+      sync3DPreview();
+    });
+    
+    canvas.on('object:modified', function() {
+      saveState();
+      sync3DPreview();
+    });
+
+    canvas.on('selection:created', function(e) {
+      handleObjectSelected(e.selected[0]);
+    });
+    
+    canvas.on('selection:updated', function(e) {
+      handleObjectSelected(e.selected[0]);
+    });
+    
+    canvas.on('selection:cleared', function() {
+      handleObjectCleared();
+    });
+  }
+
+  function drawGrid() {
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Draw visual grid utilizing custom SVG background pattern or Fabric line paths
+    for (var i = 0; i < (width / gridSize); i++) {
+      canvas.add(new fabric.Line([ i * gridSize, 0, i * gridSize, height], { 
+        stroke: '#f1f5f9', 
+        selectable: false,
+        evented: false 
+      }));
+    }
+    for (var j = 0; j < (height / gridSize); j++) {
+      canvas.add(new fabric.Line([ 0, j * gridSize, width, j * gridSize], { 
+        stroke: '#f1f5f9', 
+        selectable: false,
+        evented: false 
+      }));
+    }
+  }
+
+  // 4. Asset Drag & Drop Event Handlers
+  function handleDragStart(e, type) {
+    currentDragType = type;
+    e.dataTransfer.setData('text/plain', type);
+  }
+
+  function allowDrop(e) {
+    e.preventDefault();
+  }
+
+  async function handleDrop(e) {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('text/plain') || currentDragType;
+    if (!type) return;
+
+    // Calculate mouse position relative to canvas wrapper
+    const rect = canvas.upperCanvasEl.getBoundingClientRect();
+    const x = Math.round((e.clientX - rect.left) / gridSize) * gridSize;
+    const y = Math.round((e.clientY - rect.top) / gridSize) * gridSize;
+    
+    await createAssetObject(type, x, y);
+    currentDragType = null;
+  }
+
+  async function addAssetDirect(type) {
+    // Add to center of canvas
+    const x = canvas.width / 2;
+    const y = canvas.height / 2;
+    await createAssetObject(type, x, y);
+  }
+
+  async function createAssetObject(type, x, y) {
+    let finalType = type;
+    let bedType = 'single';
+    
+    if (type === 'bed') {
+      const selectedType = await showBedSelectionDialog();
+      if (!selectedType) return; // cancelled
+      bedType = selectedType;
+      finalType = selectedType === 'bunk' ? 'bunk_bed' : 'single_bed';
+    }
+    
+    // Generate automatic label based on type
+    const count = canvas.getObjects().filter(o => o.customData && o.customData.type === finalType).length + 1;
+    let shortName = finalType.split('_')[0];
+    let label = `${shortName.charAt(0).toUpperCase() + shortName.slice(1)}-${count}`;
+    
+    addAssetToCanvas(finalType, x, y, 0, label, bedType, false, false);
+    saveState();
+    sync3DPreview();
+  }
+
+  // Bed modal picker
+  function showBedSelectionDialog() {
+    document.getElementById('bed-selection-modal').classList.add('active');
+    return new Promise(resolve => {
+      modalResolve = resolve;
+    });
+  }
+
+  function chooseBedType(type) {
+    closeBedModal();
+    if (modalResolve) modalResolve(type);
+  }
+
+  function closeBedModal() {
+    document.getElementById('bed-selection-modal').classList.remove('active');
+    if (modalResolve) modalResolve(null);
+  }
+
+  // 5. Add Asset Objects to Fabric Canvas
+  function addAssetToCanvas(type, left, top, angle = 0, label = '', bedType = 'single', vip = false, near_window = false) {
+    const config = assetSizes[type];
+    if (!config) return;
+
+    // Create custom Fabric.js Group combining Rect & Text
+    const rect = new fabric.Rect({
+      width: config.width,
+      height: config.height,
+      fill: config.color,
+      stroke: config.outline,
+      strokeWidth: 2,
+      rx: 6,
+      ry: 6,
+      originX: 'center',
+      originY: 'center'
+    });
+
+    const textIcon = new fabric.Text(config.icon, {
+      fontSize: 16,
+      originX: 'center',
+      originY: 'center',
+      top: -12,
+      selectable: false
+    });
+
+    const textLabel = new fabric.Text(label, {
+      fontSize: 10,
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontWeight: 'bold',
+      fill: '#1e293b',
+      originX: 'center',
+      originY: 'center',
+      top: 14,
+      selectable: false
+    });
+
+    const group = new fabric.Group([rect, textIcon, textLabel], {
+      left: Math.round(left / gridSize) * gridSize,
+      top: Math.round(top / gridSize) * gridSize,
+      angle: angle,
+      originX: 'center',
+      originY: 'center',
+      hasControls: true,
+      hasBorders: true,
+      transparentCorners: false,
+      cornerColor: config.outline,
+      cornerSize: 8,
+      lockScalingX: true,
+      lockScalingY: true,
+      lockSkewingX: true,
+      lockSkewingY: true
+    });
+
+    group.customData = {
+      type: type,
+      label: label,
+      bed_type: bedType,
+      vip: vip,
+      near_window: near_window
+    };
+
+    // Listen to local rotation changes to sync angle
+    group.on('rotating', () => {
+      // Snap to 90 degrees increments
+      let snappedAngle = Math.round(group.angle / 90) * 90;
+      group.set('angle', snappedAngle);
+      sync3DPreview();
+    });
+
+    canvas.add(group);
+    canvas.setActiveObject(group);
+    canvas.renderAll();
+  }
+
+  // 6. Properties Panel Handling
+  function handleObjectSelected(obj) {
+    if (!obj || !obj.customData) return;
+    selectedObject = obj;
+    
+    document.getElementById('no-item-selected').style.display = 'none';
+    document.getElementById('item-properties').style.display = 'block';
+    
+    // Set field values
+    document.getElementById('prop-label').value = obj.customData.label;
+    document.getElementById('prop-vip').checked = obj.customData.vip;
+    document.getElementById('prop-window').checked = obj.customData.near_window;
+    
+    const bedGroup = document.getElementById('prop-bed-type-group');
+    if (obj.customData.type.includes('bed')) {
+      bedGroup.style.display = 'block';
+      document.getElementById('prop-bed-type').value = obj.customData.bed_type;
+    } else {
+      bedGroup.style.display = 'none';
+    }
+  }
+
+  function handleObjectCleared() {
+    selectedObject = null;
+    document.getElementById('no-item-selected').style.display = 'block';
+    document.getElementById('item-properties').style.display = 'none';
+  }
+
+  function updateSelectedProp(property, value) {
+    if (!selectedObject) return;
+
+    // Toggle specific properties inside Fabric custom data
+    selectedObject.customData[property] = value;
+
+    if (property === 'label') {
+      // Update label text inside group
+      const labelObj = selectedObject.item(2);
+      if (labelObj) {
+        labelObj.set('text', value);
+        canvas.renderAll();
+      }
+    }
+    
+    if (property === 'bed_type') {
+      // Swap bed type: change color and data structure
+      const newType = value === 'bunk' ? 'bunk_bed' : 'single_bed';
+      selectedObject.customData.type = newType;
+      
+      const rect = selectedObject.item(0);
+      const icon = selectedObject.item(1);
+      const conf = assetSizes[newType];
+      
+      if (rect && icon) {
+        rect.set({
+          fill: conf.color,
+          stroke: conf.outline
+        });
+        icon.set('text', conf.icon);
+        canvas.renderAll();
+      }
+    }
+
+    saveState();
+    sync3DPreview();
+  }
+
+  function rotateSelected(deg) {
+    if (!selectedObject) return;
+    let newAngle = (selectedObject.angle + deg) % 360;
+    selectedObject.set('angle', newAngle);
+    canvas.renderAll();
+    saveState();
+    sync3DPreview();
+  }
+
+  function deleteSelected() {
+    if (!selectedObject) return;
+    canvas.remove(selectedObject);
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    saveState();
+    sync3DPreview();
+  }
+
+  function clearCanvas() {
+    if (confirm('Clear the current layout grid entirely?')) {
+      // Keep background lines
+      const objects = canvas.getObjects().slice();
+      objects.forEach(obj => {
+        if (obj.selectable !== false) {
+          canvas.remove(obj);
+        }
+      });
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      saveState();
+      sync3DPreview();
+    }
+  }
+
+  // 7. Undo/Redo Engine
+  function saveState() {
+    if (!isSavingState) return;
+    
+    // Get state JSON
+    const layout = exportLayoutJSON();
+    undoStack.push(JSON.stringify(layout));
+    redoStack = []; // reset redo
+    
+    updateUndoRedoButtons();
+  }
+
+  function undo() {
+    if (undoStack.length <= 1) return;
+    isSavingState = false;
+    
+    const current = undoStack.pop();
+    redoStack.push(current);
+    
+    const previous = undoStack[undoStack.length - 1];
+    importLayoutJSON(JSON.parse(previous));
+    
+    isSavingState = true;
+    updateUndoRedoButtons();
+    sync3DPreview();
+  }
+
+  function redo() {
+    if (redoStack.length === 0) return;
+    isSavingState = false;
+    
+    const next = redoStack.pop();
+    undoStack.push(next);
+    importLayoutJSON(JSON.parse(next));
+    
+    isSavingState = true;
+    updateUndoRedoButtons();
+    sync3DPreview();
+  }
+
+  // 8. Template Engine
+  function loadTemplate(name) {
+    if (!name) return;
+    
+    // Confirm override if items exist
+    const items = canvas.getObjects().filter(o => o.selectable !== false);
+    if (items.length > 0 && !confirm('Loading template will replace current custom layout. Continue?')) {
+      document.getElementById('template-select').value = '';
+      return;
+    }
+    
+    // Clear items first
+    items.forEach(obj => canvas.remove(obj));
+    canvas.discardActiveObject();
+    
+    // Pre-made premium layouts configurations
+    const templates = {
+      standard2: [
+        { type: 'single_bed', x: 80, y: 100, angle: 90, label: 'Bed A', bed_type: 'single', vip: false, near_window: true },
+        { type: 'single_bed', x: 520, y: 100, angle: 270, label: 'Bed B', bed_type: 'single', vip: false, near_window: true },
+        { type: 'table', x: 220, y: 350, angle: 0, label: 'Desk-1', vip: false, near_window: false },
+        { type: 'table', x: 380, y: 350, angle: 0, label: 'Desk-2', vip: false, near_window: false },
+        { type: 'chair', x: 220, y: 310, angle: 180, label: 'Chair-1', vip: false, near_window: false },
+        { type: 'chair', x: 380, y: 310, angle: 180, label: 'Chair-2', vip: false, near_window: false },
+        { type: 'cupboard', x: 300, y: 40, angle: 0, label: 'Cupboard', vip: false, near_window: false }
+      ],
+      standard4: [
+        { type: 'single_bed', x: 80, y: 100, angle: 90, label: 'Bed A', bed_type: 'single', vip: true, near_window: true },
+        { type: 'single_bed', x: 80, y: 300, angle: 90, label: 'Bed B', bed_type: 'single', vip: false, near_window: false },
+        { type: 'single_bed', x: 520, y: 100, angle: 270, label: 'Bed C', bed_type: 'single', vip: true, near_window: true },
+        { type: 'single_bed', x: 520, y: 300, angle: 270, label: 'Bed D', bed_type: 'single', vip: false, near_window: false },
+        { type: 'table', x: 220, y: 40, angle: 0, label: 'Desk-1', vip: false, near_window: false },
+        { type: 'table', x: 380, y: 40, angle: 0, label: 'Desk-2', vip: false, near_window: false },
+        { type: 'chair', x: 220, y: 80, angle: 0, label: 'Chair-1', vip: false, near_window: false },
+        { type: 'chair', x: 380, y: 80, angle: 0, label: 'Chair-2', vip: false, near_window: false },
+        { type: 'cupboard', x: 300, y: 360, angle: 180, label: 'Cupboard-A', vip: false, near_window: false }
+      ],
+      lshape4: [
+        { type: 'bunk_bed', x: 80, y: 100, angle: 90, label: 'Bunk A/B', bed_type: 'bunk', vip: false, near_window: true },
+        { type: 'bunk_bed', x: 520, y: 100, angle: 270, label: 'Bunk C/D', bed_type: 'bunk', vip: false, near_window: true },
+        { type: 'table', x: 220, y: 320, angle: 90, label: 'Desk-1', vip: false, near_window: false },
+        { type: 'table', x: 380, y: 320, angle: 270, label: 'Desk-2', vip: false, near_window: false },
+        { type: 'chair', x: 265, y: 320, angle: 90, label: 'Chair-1', vip: false, near_window: false },
+        { type: 'chair', x: 335, y: 320, angle: 270, label: 'Chair-2', vip: false, near_window: false },
+        { type: 'cupboard', x: 300, y: 40, angle: 0, label: 'Cabinet', vip: false, near_window: false }
+      ],
+      dorm6: [
+        { type: 'bunk_bed', x: 80, y: 100, angle: 90, label: 'Bunk A/B', bed_type: 'bunk', vip: false, near_window: true },
+        { type: 'bunk_bed', x: 80, y: 300, angle: 90, label: 'Bunk C/D', bed_type: 'bunk', vip: false, near_window: false },
+        { type: 'bunk_bed', x: 520, y: 100, angle: 270, label: 'Bunk E/F', bed_type: 'bunk', vip: false, near_window: true },
+        { type: 'table', x: 300, y: 200, angle: 0, label: 'Dorm Table', vip: false, near_window: false },
+        { type: 'chair', x: 240, y: 200, angle: 90, label: 'Chair-1', vip: false, near_window: false },
+        { type: 'chair', x: 360, y: 200, angle: 270, label: 'Chair-2', vip: false, near_window: false },
+        { type: 'cupboard', x: 300, y: 40, angle: 0, label: 'Wardrobe A', vip: false, near_window: false },
+        { type: 'cupboard', x: 300, y: 360, angle: 180, label: 'Wardrobe B', vip: false, near_window: false }
+      ]
+    };
+    
+    const config = templates[name];
+    if (config) {
+      config.forEach(a => {
+        addAssetToCanvas(a.type, a.x, a.y, a.angle, a.label, a.bed_type, a.vip, a.near_window);
+      });
+      canvas.renderAll();
+      saveState();
+      sync3DPreview();
+    }
+    
+    document.getElementById('template-select').value = '';
+  }
+
+  // 9. Save Layout JSON to Database
+  async function saveLayout() {
+    const layout = exportLayoutJSON();
+    
+    try {
+      const res = await ATCHMS.api(`/rooms/${roomId}/layout`, {
+        method: 'PUT',
+        body: JSON.stringify({ layout })
+      });
+      
+      if (res.success) {
+        ATCHMS.alert('✅ Room layout designed and saved successfully!', 'Success');
+      } else {
+        ATCHMS.alert(res.error || 'Failed to save room layout.', 'Error');
+      }
+    } catch (e) {
+      console.error(e);
+      ATCHMS.alert('Connection failed to backend API server.', 'Connection Error');
+    }
+  }
+
+  // 10. Data Importer & Exporter
+  function exportLayoutJSON() {
+    const items = canvas.getObjects().filter(o => o.selectable !== false);
+    const assets = items.map(o => {
+      return {
+        type: o.customData.type,
+        x: o.left,
+        y: o.top,
+        angle: o.angle,
+        label: o.customData.label,
+        bed_type: o.customData.bed_type,
+        vip: o.customData.vip,
+        near_window: o.customData.near_window
+      };
+    });
+    
+    return {
+      canvas_width: canvas.width,
+      canvas_height: canvas.height,
+      assets: assets
+    };
+  }
+
+  function importLayoutJSON(layout) {
+    if (!layout || !layout.assets) return;
+    
+    // Clear current selection & objects
+    canvas.discardActiveObject();
+    canvas.getObjects().slice().forEach(obj => {
+      if (obj.selectable !== false) canvas.remove(obj);
+    });
+    
+    layout.assets.forEach(a => {
+      addAssetToCanvas(a.type, a.x, a.y, a.angle, a.label, a.bed_type, a.vip, a.near_window);
+    });
+    canvas.renderAll();
+  }
+
+  // 11. Three.js 3D Preview Engine
+  function init3D() {
+    threeContainer = document.getElementById('three-preview-box');
+    const width = threeContainer.clientWidth;
+    const height = threeContainer.clientHeight || 300;
+    
+    // Initialize scene, camera, renderer
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0f172a'); // slate 900
+    
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+    camera.position.set(5, 7, 7);
+    
+    renderer = new THREE.WebGLRenderer({
+      canvas: document.getElementById('three-preview-canvas'),
+      antialias: true
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    
+    // Orbit Controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.05; // limit view below floor
+    
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    dirLight.position.set(5, 10, 5);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+    
+    const dirLight2 = new THREE.DirectionalLight(0x93c5fd, 0.3); // subtle blue fill
+    dirLight2.position.set(-5, 5, -5);
+    scene.add(dirLight2);
+
+    // Floor and Walls setup (represents 600x400 canvas scaled down)
+    // Scale factor: 600px width = 6 units width, 400px height = 4 units height
+    const floorGeo = new THREE.BoxGeometry(6, 0.1, 4);
+    const floorMat = new THREE.MeshStandardMaterial({ color: '#dfc09c', roughness: 0.8 }); // wood color
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.position.y = -0.05;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Walls
+    const wallMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.9 }); // slate 700
+    // Back Wall
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 0.1), wallMat);
+    backWall.position.set(0, 1.5, -2);
+    scene.add(backWall);
+    // Left Wall
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, 4), wallMat);
+    leftWall.position.set(-3, 1.5, 0);
+    scene.add(leftWall);
+    
+    // Group to hold dynamic furniture meshes
+    modelGroup = new THREE.Group();
+    scene.add(modelGroup);
+    
+    // Resize listener
+    window.addEventListener('resize', () => {
+      if (!threeContainer) return;
+      const w = threeContainer.clientWidth;
+      const h = threeContainer.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    });
+
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  }
+
+  // 12. Build & Sync 3D Meshes from Canvas Coordinates
+  function sync3DPreview() {
+    if (!modelGroup) return;
+
+    // Clear current meshes
+    while (modelGroup.children.length > 0) {
+      modelGroup.remove(modelGroup.children[0]);
+    }
+    
+    const items = canvas.getObjects().filter(o => o.selectable !== false);
+    
+    items.forEach(o => {
+      // Map 2D coordinate system to 3D layout coordinates
+      // Canvas dimensions: 600 x 400. Center is (300, 200).
+      // 3D coordinates: x ranges from -3 to 3, z ranges from -2 to 2.
+      const canvasX = o.left;
+      const canvasY = o.top;
+      
+      const x3d = (canvasX - 300) / 100;
+      const z3d = (canvasY - 200) / 100;
+      const angleRad = -(o.angle * Math.PI) / 180; // invert rotation for WebGL coordinates
+
+      const type = o.customData.type;
+      const mesh = createFurnitureMesh(type, o.customData);
+      
+      if (mesh) {
+        mesh.position.set(x3d, 0, z3d);
+        mesh.rotation.y = angleRad;
+        modelGroup.add(mesh);
+      }
+    });
+  }
+
+  function createFurnitureMesh(type, data) {
+    const group = new THREE.Group();
+    const woodMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.9 }); // mahogany wood
+    const metalMat = new THREE.MeshStandardMaterial({ color: '#475569', metalness: 0.8, roughness: 0.2 }); // metallic dark grey
+
+    if (type === 'single_bed') {
+      // Frame
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.9), woodMat);
+      frame.position.y = 0.075;
+      group.add(frame);
+      // Headboard
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.05), woodMat);
+      head.position.set(0, 0.2, -0.425);
+      group.add(head);
+      // Mattress
+      const sheetColor = data.vip ? '#fbbf24' : '#34d399'; // VIP is gold, normal is green
+      const sheetMat = new THREE.MeshStandardMaterial({ color: sheetColor, roughness: 0.7 });
+      const mattress = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.12, 0.84), sheetMat);
+      mattress.position.set(0, 0.2, 0.01);
+      group.add(mattress);
+      // Pillow
+      const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.18), new THREE.MeshStandardMaterial({ color: '#ffffff' }));
+      pillow.position.set(0, 0.27, -0.3);
+      group.add(pillow);
+    } 
+    else if (type === 'bunk_bed') {
+      // Four posts
+      const postGeo = new THREE.BoxGeometry(0.04, 1.6, 0.04);
+      for (let px of [-0.23, 0.23]) {
+        for (let pz of [-0.43, 0.43]) {
+          const post = new THREE.Mesh(postGeo, woodMat);
+          post.position.set(px, 0.8, pz);
+          group.add(post);
+        }
+      }
+      // Lower support
+      const lowerFrame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.9), woodMat);
+      lowerFrame.position.y = 0.15;
+      group.add(lowerFrame);
+      // Upper support
+      const upperFrame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.9), woodMat);
+      upperFrame.position.y = 1.15;
+      group.add(upperFrame);
+
+      // Lower Mattress
+      const lowerSheetMat = new THREE.MeshStandardMaterial({ color: data.vip ? '#fbbf24' : '#34d399', roughness: 0.7 });
+      const lowerMattress = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.1, 0.84), lowerSheetMat);
+      lowerMattress.position.set(0, 0.22, 0);
+      group.add(lowerMattress);
+      
+      // Upper Mattress
+      const upperSheetMat = new THREE.MeshStandardMaterial({ color: '#a78bfa', roughness: 0.7 }); // Purple upper bed
+      const upperMattress = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.1, 0.84), upperSheetMat);
+      upperMattress.position.set(0, 1.22, 0);
+      group.add(upperMattress);
+
+      // Pillows
+      const pillowMat = new THREE.MeshStandardMaterial({ color: '#ffffff' });
+      const pillowLower = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.18), pillowMat);
+      pillowLower.position.set(0, 0.28, -0.3);
+      group.add(pillowLower);
+
+      const pillowUpper = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.18), pillowMat);
+      pillowUpper.position.set(0, 1.28, -0.3);
+      group.add(pillowUpper);
+      
+      // Ladder
+      const ladder = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.2, 0.12), woodMat);
+      ladder.position.set(0.24, 0.6, 0.2);
+      group.add(ladder);
+    } 
+    else if (type === 'table') {
+      // Tabletop
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.03, 0.35), woodMat);
+      top.position.y = 0.585;
+      group.add(top);
+      // Legs
+      const legGeo = new THREE.BoxGeometry(0.03, 0.57, 0.03);
+      for (let lx of [-0.2, 0.2]) {
+        for (let lz of [-0.15, 0.15]) {
+          const leg = new THREE.Mesh(legGeo, woodMat);
+          leg.position.set(lx, 0.285, lz);
+          group.add(leg);
+        }
+      }
+    } 
+    else if (type === 'chair') {
+      // Legs
+      const legGeo = new THREE.BoxGeometry(0.025, 0.34, 0.025);
+      for (let lx of [-0.11, 0.11]) {
+        for (let lz of [-0.11, 0.11]) {
+          const leg = new THREE.Mesh(legGeo, woodMat);
+          leg.position.set(lx, 0.17, lz);
+          group.add(leg);
+        }
+      }
+      // Seat
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.25), woodMat);
+      seat.position.y = 0.35;
+      group.add(seat);
+      // Backrest posts & panel
+      const backPostGeo = new THREE.BoxGeometry(0.02, 0.32, 0.02);
+      for (let lx of [-0.11, 0.11]) {
+        const bp = new THREE.Mesh(backPostGeo, woodMat);
+        bp.position.set(lx, 0.51, -0.11);
+        group.add(bp);
+      }
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.02), woodMat);
+      back.position.set(0, 0.58, -0.11);
+      group.add(back);
+    } 
+    else if (type === 'cupboard') {
+      // Main wardrobe box
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.4, 0.35), woodMat);
+      body.position.y = 0.7;
+      group.add(body);
+      
+      // Decorative border lines
+      const doorLine = new THREE.Mesh(new THREE.BoxGeometry(0.01, 1.36, 0.36), metalMat);
+      doorLine.position.set(0, 0.7, 0.01);
+      group.add(doorLine);
+      
+      // Handles
+      const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.02), metalMat);
+      h1.position.set(-0.04, 0.7, 0.185);
+      group.add(h1);
+      const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.02), metalMat);
+      h2.position.set(0.04, 0.7, 0.185);
+      group.add(h2);
+    }
+
+    // Add Label text mesh billboard (represented as Sprite text helper)
+    if (data.label) {
+      const sprite = makeTextSprite(data.label, data.vip, data.near_window);
+      sprite.position.set(0, 1.8, 0); // hover above asset
+      group.add(sprite);
+    }
+
+    return group;
+  }
+
+  // Helper to generate text billboard canvas sprite
+  function makeTextSprite(message, isVip, isWindow) {
+    const canvasEl = document.createElement('canvas');
+    canvasEl.width = 256;
+    canvasEl.height = 128;
+    const ctx = canvasEl.getContext('2d');
+    
+    // Draw background bubble
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 4;
+    
+    if (isVip) {
+      ctx.strokeStyle = '#fbbf24'; // Gold border for VIP
+    }
+    
+    roundRect(ctx, 4, 4, 248, 120, 16, true, true);
+    
+    // Text drawing
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(message, 128, 64);
+    
+    // Optional tags rendering
+    let tagText = '';
+    if (isVip) tagText += ' ⭐ VIP';
+    if (isWindow) tagText += ' 🪟 WINDOW';
+    if (tagText) {
+      ctx.fillStyle = isVip ? '#fbbf24' : '#bae6fd';
+      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.fillText(tagText, 128, 98);
+    }
+    
+    const texture = new THREE.CanvasTexture(canvasEl);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(1.5, 0.75, 1.0);
+    return sprite;
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+    if (typeof r === 'undefined') r = 5;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h - r);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

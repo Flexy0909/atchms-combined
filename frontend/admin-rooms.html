@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Rooms & 3D Allocations — Admin — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .split-layout {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 992px) {
+    .split-layout { grid-template-columns: 1fr; }
+  }
+  
+  .inspector-card {
+    position: sticky;
+    top: 24px;
+  }
+
+  .canvas-container {
+    width: 100%;
+    height: 320px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+
+  .room-thumbnail {
+    width: 100%;
+    height: 160px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+
+  .bed-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--light);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .bed-item.occupied {
+    border-left: 4px solid #ef4444;
+  }
+
+  .bed-item.available {
+    border-left: 4px solid #10b981;
+  }
+
+  .clickable-row {
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .clickable-row:hover {
+    background: rgba(11, 93, 59, 0.05) !important;
+  }
+  .clickable-row.active-row {
+    background: rgba(11, 93, 59, 0.1) !important;
+    font-weight: 600;
+  }
+  
+  .tour-overlay {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(15, 23, 42, 0.85);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    pointer-events: none;
+  }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="admin.html" class="active">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Admin Console</h5><small>Dean of Students</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="admin.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="admin-applications.html"><span class="dot"></span> Applications</a></li>
+      <li><a href="admin-students.html"><span class="dot"></span> Students</a></li>
+      <li><a href="admin-users.html"><span class="dot"></span> Users</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Hostels</a></li>
+      <li><a href="admin-rooms.html" class="active"><span class="dot"></span> Rooms</a></li>
+      <li><a href="admin-rules.html"><span class="dot"></span> Allocation Rules</a></li>
+      <li><a href="admin-payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="admin-maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="admin-reports.html"><span class="dot"></span> Reports</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Rooms & 3D Allocations</h2>
+        <p>Interactive 3D portal to allocate beds, customize room media, and view virtual tours.</p>
+      </div>
+    </div>
+
+    <div class="split-layout">
+      <!-- Left Panel: Rooms Inventory -->
+      <div class="panel">
+        <h4 style="color:var(--dark); margin-bottom:14px;">Rooms Inventory</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Room</th><th>Block</th><th>Type</th><th>Occupancy</th><th>Status</th></tr>
+            </thead>
+            <tbody id="rooms-tbody">
+              <tr><td colspan="5" style="text-align:center;">Loading rooms database...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Panel: Room Inspector & 3D Visualizer -->
+      <div class="panel inspector-card" id="inspector-panel" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h4 style="margin:0;"><span id="inspect-room-num">Room 101</span> Inspector</h4>
+          <span class="badge" id="inspect-room-hostel">Male Hostel</span>
+        </div>
+
+        <!-- 3D Room Viewer Canvas -->
+        <div style="position:relative;">
+          <div id="room-3d-canvas" class="canvas-container"></div>
+          <div class="tour-overlay">3D BED ALLOCATION</div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+          <button class="btn btn-outline" style="flex:1; min-width:110px; padding:8px 10px; font-size:12px;" onclick="toggleTourMode()">🎥 Toggle Tour</button>
+          <button class="btn btn-outline" style="padding:8px 10px; font-size:12px;" onclick="openMediaModal()">⚙️ Media</button>
+          <button class="btn btn-primary" style="padding:8px 10px; font-size:12px; background:var(--dark); border-color:var(--dark);" onclick="goToRoomDesigner()">🎨 Designer</button>
+        </div>
+
+        <!-- Bed Allocation Details -->
+        <div style="margin-top:14px;">
+          <h5 style="margin-bottom:10px; color:var(--dark);">Beds configuration</h5>
+          <div id="beds-list">
+            <!-- Dynamic Bed list -->
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel" id="no-select-panel" style="text-align:center; padding:60px var(--padding); color:var(--muted);">
+        <svg viewBox="0 0 24 24" style="width:60px; fill:var(--border); margin-bottom:14px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <h4>No Room Selected</h4>
+        <p>Click on any room in the inventory grid to load its 3D visualization and manage bed allocations.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal for editing photo and tour URLs -->
+<div class="atchms-modal-overlay" id="media-modal">
+  <div class="atchms-modal-box" style="max-width:450px; border-top: 5px solid var(--primary);">
+    <div style="text-align: right;"><button onclick="closeMediaModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button></div>
+    <div class="atchms-modal-header" style="font-size:18px; font-weight:700; color:var(--dark); margin-bottom:14px;">Edit Room Media</div>
+    <div class="atchms-modal-body" style="text-align:left; margin-bottom:20px;">
+      <div style="margin-bottom:12px;">
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Room Image URL</label>
+        <input type="text" id="media-photo-url" class="form-control" placeholder="e.g. atc-building.jpg" style="width:100%;" />
+      </div>
+      <div>
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Virtual Tour Type/URL</label>
+        <input type="text" id="media-tour-url" class="form-control" placeholder="e.g. dynamic_virtual_tour_room" style="width:100%;" />
+      </div>
+    </div>
+    <div style="display:flex; gap:12px; justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeMediaModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMedia()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for allocating a student -->
+<div class="atchms-modal-overlay" id="allocate-modal">
+  <div class="atchms-modal-box" style="max-width:450px; border-top: 5px solid var(--primary);">
+    <div style="text-align: right;"><button onclick="closeAllocateModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button></div>
+    <div class="atchms-modal-header" style="font-size:18px; font-weight:700; color:var(--dark); margin-bottom:14px;">Allocate Bed <span id="alloc-bed-name">—</span></div>
+    <div class="atchms-modal-body" style="text-align:left; margin-bottom:20px;">
+      <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Select Student</label>
+      <select id="allocate-student-select" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1px solid var(--border);">
+        <option value="">Loading students...</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:12px; justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeAllocateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAllocation()">Allocate Student</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<!-- CDN Dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="room3d.js?v=3.2"></script>
+<script src="api.js?v=2.6"></script>
+
+<script>
+  if (ATCHMS.requireAdmin()) {
+    let currentRoomId = null;
+    let loadedRoomDetails = null;
+    let active3DInstance = null;
+    let tourModeActive = false;
+    let studentsList = [];
+    let roomsList = [];
+
+    // Load rooms and students initially
+    async function initPage() {
+      await loadRooms();
+      await loadStudents();
+    }
+
+    async function loadRooms() {
+      try {
+        roomsList = await ATCHMS.api('/rooms');
+        const tbody = document.getElementById('rooms-tbody');
+        if (roomsList.length > 0) {
+          tbody.innerHTML = roomsList.map(r => {
+            const statusClass = r.occupied_count >= r.capacity ? 'badge-red' : 'badge-green';
+            const statusText = r.occupied_count >= r.capacity ? 'Full' : `${r.capacity - r.occupied_count} left`;
+            
+            return `
+              <tr class="clickable-row" id="room-row-${r.id}" onclick="selectRoom(${r.id})">
+                <td><strong>${r.room_number}</strong></td>
+                <td>${r.hostel_name}</td>
+                <td style="text-transform: capitalize;">${r.gender_type} sharing</td>
+                <td>${r.occupied_count} / ${r.capacity}</td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No rooms found in database.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadStudents() {
+      try {
+        const list = await ATCHMS.api('/students');
+        studentsList = list.filter(s => s.application_status === 'approved');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.selectRoom = async (roomId) => {
+      // Highlight row
+      document.querySelectorAll('.clickable-row').forEach(row => row.classList.remove('active-row'));
+      const activeRow = document.getElementById(`room-row-${roomId}`);
+      if (activeRow) activeRow.classList.add('active-row');
+
+      currentRoomId = roomId;
+      tourModeActive = false;
+      document.getElementById('no-select-panel').style.display = 'none';
+      document.getElementById('inspector-panel').style.display = 'block';
+
+      await refreshRoomDetails();
+    };
+
+    async function refreshRoomDetails() {
+      if (!currentRoomId) return;
+      try {
+        loadedRoomDetails = await ATCHMS.api(`/rooms/${currentRoomId}/details`);
+        
+        document.getElementById('inspect-room-num').textContent = `Room ${loadedRoomDetails.room.room_number}`;
+        document.getElementById('inspect-room-hostel').textContent = loadedRoomDetails.room.hostel_name;
+
+        // Render 3D Canvas
+        initOrUpdate3D();
+
+        // Render bed configuration list
+        renderBedsList();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function initOrUpdate3D() {
+      if (active3DInstance) {
+        active3DInstance.destroy();
+      }
+
+      const container = document.getElementById('room-3d-canvas');
+      const room = loadedRoomDetails.room;
+      const allocations = loadedRoomDetails.allocations;
+
+      if (tourModeActive) {
+        active3DInstance = ATCHMS3D.initVirtualTour(container, room.photo_url);
+      } else {
+        active3DInstance = ATCHMS3D.init3DRoom(container, room, allocations, (bedLabel) => {
+          openAllocateModal(bedLabel);
+        });
+      }
+    }
+
+    window.toggleTourMode = () => {
+      tourModeActive = !tourModeActive;
+      const overlay = document.querySelector('.tour-overlay');
+      if (overlay) {
+        overlay.textContent = tourModeActive ? '360° VIRTUAL TOUR' : '3D BED ALLOCATION';
+      }
+      initOrUpdate3D();
+    };
+
+    function renderBedsList() {
+      const bedsContainer = document.getElementById('beds-list');
+      const capacity = loadedRoomDetails.room.capacity || 2;
+      const allocations = loadedRoomDetails.allocations;
+      
+      const labels = capacity === 2 ? ['Bed A', 'Bed B'] : ['Bed A', 'Bed B', 'Bed C', 'Bed D'];
+
+      bedsContainer.innerHTML = labels.map(label => {
+        const alloc = allocations.find(a => a.bed_label === label);
+        if (alloc) {
+          return `
+            <div class="bed-item occupied">
+              <div>
+                <strong>${label}</strong>
+                <small style="display:block; color:var(--muted);">${alloc.fullname} (${alloc.admission_no})</small>
+              </div>
+              <button class="action-btn view-btn" style="background:#fee2e2; color:#ef4444;" onclick="removeAllocation('${label}', ${alloc.student_id})">Deallocate</button>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="bed-item available">
+              <div>
+                <strong>${label}</strong>
+                <small style="display:block; color:var(--muted);">Vacant / Available</small>
+              </div>
+              <button class="action-btn view-btn" onclick="openAllocateModal('${label}')">Assign Bed</button>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    // Modal control
+    let selectedBedForAllocation = null;
+
+    window.openAllocateModal = (bedLabel) => {
+      selectedBedForAllocation = bedLabel;
+      document.getElementById('alloc-bed-name').textContent = bedLabel;
+      
+      const select = document.getElementById('allocate-student-select');
+      select.innerHTML = '<option value="">Choose Student...</option>' + 
+        studentsList.map(s => `<option value="${s.id}">${s.fullname} (${s.admission_no})</option>`).join('');
+
+      document.getElementById('allocate-modal').classList.add('active');
+    };
+
+    window.closeAllocateModal = () => {
+      document.getElementById('allocate-modal').classList.remove('active');
+    };
+
+    window.submitAllocation = async () => {
+      const studentSelect = document.getElementById('allocate-student-select');
+      const studentId = studentSelect.value;
+      if (!studentId) {
+        ATCHMS.alert('Please select a student.');
+        return;
+      }
+
+      try {
+        const res = await ATCHMS.api(`/rooms/${currentRoomId}/allocate`, {
+          method: 'POST',
+          body: JSON.stringify({ student_id: studentId, bed_label: selectedBedForAllocation })
+        });
+
+        if (res.success) {
+          closeAllocateModal();
+          await refreshRoomDetails();
+          await loadRooms(); // refresh inventory stats
+          await loadStudents(); // refresh dropdown list
+          ATCHMS.alert('✅ Bed allocated successfully!');
+        } else {
+          ATCHMS.alert(res.error || 'Allocation failed');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    window.removeAllocation = async (bedLabel, studentId) => {
+      const confirmed = await ATCHMS.confirm(`Are you sure you want to remove the student from ${bedLabel}?`);
+      if (!confirmed) return;
+
+      try {
+        const res = await ATCHMS.api(`/rooms/${currentRoomId}/deallocate`, {
+          method: 'POST',
+          body: JSON.stringify({ student_id: studentId, bed_label: bedLabel })
+        });
+        if (res.success) {
+          await refreshRoomDetails();
+          await loadRooms(); // refresh stats
+          await loadStudents(); // refresh dropdown list
+          ATCHMS.alert('✅ Bed is now vacant!');
+        } else {
+          ATCHMS.alert(res.error || 'Deallocation failed');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    window.openMediaModal = () => {
+      document.getElementById('media-photo-url').value = loadedRoomDetails.room.photo_url || '';
+      document.getElementById('media-tour-url').value = loadedRoomDetails.room.virtual_tour_url || '';
+      document.getElementById('media-modal').classList.add('active');
+    };
+
+    window.closeMediaModal = () => {
+      document.getElementById('media-modal').classList.remove('active');
+    };
+
+    window.saveMedia = async () => {
+      const photo = document.getElementById('media-photo-url').value;
+      const tour = document.getElementById('media-tour-url').value;
+
+      try {
+        const res = await ATCHMS.api(`/rooms/${currentRoomId}/media`, {
+          method: 'PUT',
+          body: JSON.stringify({ photo_url: photo, virtual_tour_url: tour })
+        });
+        if (res.success) {
+          closeMediaModal();
+          await refreshRoomDetails();
+          ATCHMS.alert('✅ Media settings updated!');
+        } else {
+          ATCHMS.alert(res.error || 'Failed to save media settings');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    window.goToRoomDesigner = () => {
+      if (currentRoomId) {
+        window.location.href = `room-designer.html?room_id=${currentRoomId}`;
+      }
+    };
+
+    initPage();
+  }
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

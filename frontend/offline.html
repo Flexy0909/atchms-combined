@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Offline — ATCHMS</title>
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #0B5D3B, #1a8a5a);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+  }
+  .card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 24px;
+    padding: 48px 36px;
+    max-width: 420px;
+    width: 100%;
+  }
+  .icon { font-size: 72px; margin-bottom: 20px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+  p { opacity: 0.85; line-height: 1.7; margin-bottom: 24px; font-size: 15px; }
+  .btn {
+    display: inline-block;
+    background: #FFD700;
+    color: #0B5D3B;
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 15px;
+    transition: transform .2s, box-shadow .2s;
+    cursor: pointer;
+    border: none;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .cached-note {
+    margin-top: 20px;
+    font-size: 12px;
+    opacity: 0.6;
+  }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+<div class="card">
+  <div class="icon">📡</div>
+  <h1>You're Offline</h1>
+  <p>No internet connection detected. Some previously visited pages are still available from cache — try navigating to the dashboard or login page.</p>
+  <button class="btn" onclick="window.history.back()">← Go Back</button>
+  <br/><br/>
+  <a class="btn" href="/atchms/dashboard.html" style="background:rgba(255,255,255,0.2);color:#fff;">Open Dashboard</a>
+  <p class="cached-note">⚡ Cached pages work offline · Internet required for live data</p>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Payments — Admin — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .pay-form {
+    background: var(--white); border-radius: var(--radius); padding: 24px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 24px;
+  }
+  .pay-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pay-row input, .pay-row select {
+    flex: 1; min-width: 180px; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 14px; color: var(--text);
+    background: #fafdfb; outline: none;
+  }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="admin.html" class="active">Admin</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Admin Console</h5><small>Dean of Students</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="admin.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="admin-applications.html"><span class="dot"></span> Applications</a></li>
+      <li><a href="admin-students.html"><span class="dot"></span> Students</a></li>
+      <li><a href="admin-users.html"><span class="dot"></span> Users</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Hostels</a></li>
+      <li><a href="admin-rooms.html"><span class="dot"></span> Rooms</a></li>
+      <li><a href="admin-rules.html"><span class="dot"></span> Allocation Rules</a></li>
+      <li><a href="admin-payments.html" class="active"><span class="dot"></span> Payments</a></li>
+      <li><a href="admin-maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="admin-reports.html"><span class="dot"></span> Reports</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Payments Console</h2>
+        <p>Track all hostel fee transactions and issue Control Numbers.</p>
+      </div>
+    </div>
+
+    <!-- Issue Control Number Form -->
+    <div class="pay-form">
+      <h4 style="color:var(--dark); margin-bottom:14px;">Issue Billing / Control Number</h4>
+      <form id="billing-form">
+        <div class="pay-row">
+          <select id="student-id" required>
+            <option value="" disabled selected>Select student</option>
+            <!-- Loaded dynamically -->
+          </select>
+          <select id="fee-type" required>
+            <option value="" disabled selected>Fee type</option>
+            <option value="Semester 1 Hostel Fee">Semester 1 Hostel Fee (TSh 120,000)</option>
+            <option value="Semester 2 Hostel Fee">Semester 2 Hostel Fee (TSh 120,000)</option>
+            <option value="Caution Deposit">Caution Deposit (TSh 30,000)</option>
+          </select>
+          <input type="number" id="fee-amount" placeholder="Amount (TSh)" required />
+        </div>
+        <button type="submit" id="issue-btn" class="btn btn-primary" style="width:100%;">Generate Control Number & Bill Student</button>
+      </form>
+    </div>
+    <!-- Search and filter controls -->
+    <div class="filter-bar" style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+      <input type="text" id="search-input" placeholder="Search by student name, control number, reference, or description..." oninput="filterPayments()" style="flex: 2; min-width: 200px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px;" />
+      <select id="status-filter" onchange="filterPayments()" style="flex: 1; min-width: 160px; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--white); color: var(--text);">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="verifying">Verifying</option>
+        <option value="paid">Paid</option>
+      </select>
+    </div>
+
+    <!-- Payment History -->
+    <div class="panel">
+      <h4 style="color:var(--dark); margin-bottom:14px;">Transactions Log</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Control Number</th><th>Student</th><th>Admission #</th><th>Description</th>
+              <th>Amount</th><th>Status</th><th>Date Issued</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="payments-tbody">
+            <tr><td colspan="8" style="text-align:center;">Loading transactions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  if (ATCHMS.requireAdmin()) {
+    let allPayments = [];
+
+    // Auto-update amount based on type select
+    document.getElementById('fee-type').addEventListener('change', (e) => {
+      const type = e.target.value;
+      const amtInput = document.getElementById('fee-amount');
+      if (type.includes('Semester')) {
+        amtInput.value = 120000;
+      } else if (type.includes('Caution')) {
+        amtInput.value = 30000;
+      }
+    });
+
+    function renderPaymentsList(list) {
+      const tbody = document.getElementById('payments-tbody');
+      if (list.length > 0) {
+        tbody.innerHTML = list.map(p => `
+          <tr>
+            <td data-label="Control #"><code>${p.control_number}</code></td>
+            <td data-label="Name"><strong>${p.fullname}</strong></td>
+            <td data-label="Admission">${p.admission_no || 'N/A'}</td>
+            <td data-label="Type">${p.payment_type}</td>
+            <td data-label="Amount">TSh ${parseFloat(p.amount).toLocaleString()}</td>
+            <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(p.status)}">${p.status}</span></td>
+            <td data-label="Date">${ATCHMS.fmtDate(p.created_at)}</td>
+            <td data-label="Action">
+              ${p.status === 'verifying' 
+                ? `<button class="btn btn-primary" style="padding:4px 8px;font-size:12px;" onclick="verifyPayment(${p.id})">Verify</button>` 
+                : '<span style="color:var(--muted);font-size:12px;">—</span>'}
+            </td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No payment transactions found.</td></tr>';
+      }
+    }
+
+    window.filterPayments = () => {
+      const query = document.getElementById('search-input').value.toLowerCase().trim();
+      const status = document.getElementById('status-filter').value;
+
+      const filtered = allPayments.filter(p => {
+        const matchesSearch = !query ||
+          (p.fullname && p.fullname.toLowerCase().includes(query)) ||
+          (p.control_number && p.control_number.toLowerCase().includes(query)) ||
+          (p.admission_no && p.admission_no.toLowerCase().includes(query)) ||
+          (p.payment_type && p.payment_type.toLowerCase().includes(query)) ||
+          (p.transaction_reference && p.transaction_reference.toLowerCase().includes(query));
+
+        const matchesStatus = !status || p.status === status;
+
+        return matchesSearch && matchesStatus;
+      });
+
+      renderPaymentsList(filtered);
+    };
+
+    async function loadPaymentsData() {
+      try {
+        // Load students dropdown
+        const students = await ATCHMS.api('/students');
+        const stSelect = document.getElementById('student-id');
+        stSelect.innerHTML = '<option value="" disabled selected>Select student</option>' + 
+          students.map(s => `<option value="${s.id}">${s.fullname} (${s.admission_no || 'No Admission'})</option>`).join('');
+
+        // Load payments table
+        const payments = await ATCHMS.api('/payments');
+        allPayments = payments;
+        renderPaymentsList(payments);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Verify Payment
+    window.verifyPayment = async (id) => {
+      if (!confirm('Are you sure you want to verify this payment?')) return;
+      try {
+        await ATCHMS.api(`/admin/payments/${id}/verify`, { method: 'PUT' });
+        loadPaymentsData();
+      } catch (e) {
+        alert('Failed to verify: ' + e.message);
+      }
+    };
+
+    // Submit Billing
+    document.getElementById('billing-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('issue-btn');
+      btn.textContent = 'Generating...'; btn.disabled = true;
+
+      const payload = {
+        student_id: document.getElementById('student-id').value,
+        payment_type: document.getElementById('fee-type').value,
+        amount: document.getElementById('fee-amount').value
+      };
+
+      try {
+        const res = await ATCHMS.api('/payments', {
+          method: 'POST', body: JSON.stringify(payload)
+        });
+        if (res.error) {
+          ATCHMS.alert(res.error, "Error");
+        } else {
+          ATCHMS.alert(`✅ Bill created successfully! Control Number: ${res.control_number}`, "Success");
+          document.getElementById('billing-form').reset();
+          loadPaymentsData();
+        }
+      } catch {
+        ATCHMS.alert('Server error', "Error");
+      } finally {
+        btn.textContent = 'Generate Control Number & Bill Student'; btn.disabled = false;
+      }
+    });
+
+    loadPaymentsData();
+  }
+</script>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="admin.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Overview</span>
+  </a>
+  <a href="admin-applications.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Applications</span>
+  </a>
+  <a href="admin-rooms.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Rooms</span>
+  </a>
+  <a href="admin-payments.html" class="bottom-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="admin-maintenance.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Tickets</span>
+  </a>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

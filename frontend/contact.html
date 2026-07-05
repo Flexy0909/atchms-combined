@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Contact ATCHMS — Arusha Technical College</title>
+<meta name="description" content="Get in touch with the ATC hostel administration office." />
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu" id="nav-menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="login.html">Login</a></li>
+      <li><a href="register.html" class="btn btn-primary">Register</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="banner">
+  <h1>Contact Us</h1>
+  <p>The ATC Hostel Office is here to help with applications, allocations, payments and on-site issues.</p>
+  <div class="crumbs" id="crumbs-nav"><a href="index.html">Home</a> / Contact</div>
+</section>
+
+<section class="section">
+  <div class="section-inner contact-grid">
+    <div id="back-to-dash-container" style="display: none; margin-bottom: 24px; text-align: left; grid-column: 1 / -1; width: 100%;">
+      <a id="back-to-dash-link" href="dashboard.html" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
+        ← Back to Dashboard
+      </a>
+    </div>
+
+    <div class="contact-info">
+      <h3 style="color:var(--dark);margin-bottom:12px;">Get in touch</h3>
+      <p style="color:var(--muted);margin-bottom:20px;">Reach the hostel office Monday — Friday, 8:00 AM to 5:00 PM.</p>
+
+      <div class="info-item">
+        <div class="icn">📍</div>
+        <div><h5>College Address</h5><p>Arusha Technical College, Sokoine Road, P.O. Box 296, Arusha, Tanzania.</p></div>
+      </div>
+      <div class="info-item">
+        <div class="icn">📞</div>
+        <div><h5>Phone</h5><p>+255 687 771 750<br />+255 687 771 750</p></div>
+      </div>
+      <div class="info-item">
+        <div class="icn">✉</div>
+        <div><h5>Email</h5><p>hostels@atc.ac.tz<br />dean@atc.ac.tz</p></div>
+      </div>
+      <div class="info-item">
+        <div class="icn">⏰</div>
+        <div><h5>Office Hours</h5><p>Monday – Friday: 08:00 – 17:00<br />Saturday: 09:00 – 13:00</p></div>
+      </div>
+
+      <!-- Developer WhatsApp -->
+      <div class="info-item" style="border:2px solid #25D366;border-radius:12px;background:linear-gradient(135deg,#f0fff4,#e6ffed);">
+        <div class="icn" style="background:#25D366;color:#fff;font-size:22px;">💬</div>
+        <div>
+          <h5 style="color:#128C7E;">WhatsApp — Developer</h5>
+          <p style="font-weight:600;color:#075E54;font-size:15px;">Salum Abdallah Salum</p>
+          <a href="https://wa.me/255687771750" target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;
+                    background:#25D366;color:#fff;padding:9px 18px;border-radius:999px;
+                    font-weight:700;font-size:14px;text-decoration:none;transition:background .2s;">
+            <span>+255 687 771 750</span>
+            <span style="font-size:12px;">↗ Chat on WhatsApp</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="map" style="overflow:hidden; border-radius:12px; border:1px solid #eaeaea; margin-top:20px;">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4636.486610553481!2d36.661515099999995!3d-3.344705699999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x18371d99af600383%3A0xafc1e487829cc161!2sARUSHA%20TECHNICAL%20COLLEGE!5e1!3m2!1sen!2stz!4v1783069710601!5m2!1sen!2stz" width="100%" height="300" style="border:0; display:block;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+    </div>
+
+    <div>
+      <div class="form-wrap">
+        <h3>Send us a message</h3>
+        <p class="sub">Fill the form and our team will respond within one business day.</p>
+        <form action="#" method="post">
+          <div class="field">
+            <input type="text" id="cname" name="name" placeholder=" " required />
+            <label for="cname">Name</label>
+          </div>
+          <div class="field">
+            <input type="email" id="cemail" name="email" placeholder=" " required />
+            <label for="cemail">Email</label>
+          </div>
+          <div class="field">
+            <input type="text" id="csubject" name="subject" placeholder=" " required />
+            <label for="csubject">Subject</label>
+          </div>
+          <div class="field">
+            <textarea id="cmessage" name="message" rows="5" placeholder=" " required></textarea>
+            <label for="cmessage">Message</label>
+          </div>
+          <div class="form-actions">
+            <button type="reset" class="btn btn-outline">Clear</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  // Update header based on auth status
+  const navMenu = document.getElementById('nav-menu');
+  if (ATCHMS.isLoggedIn()) {
+    const isAdmin = ATCHMS.isAdmin();
+    const dashPage = isAdmin ? 'admin.html' : 'dashboard.html';
+    const dashLabel = isAdmin ? 'Admin Console' : 'Student Dashboard';
+
+    navMenu.innerHTML = `
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="${dashPage}">${isAdmin ? 'Admin' : 'Dashboard'}</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;" class="btn btn-outline">Logout</a></li>
+    `;
+
+    // Show back to dashboard button
+    const backBtnContainer = document.getElementById('back-to-dash-container');
+    const backBtnLink = document.getElementById('back-to-dash-link');
+    if (backBtnContainer && backBtnLink) {
+      backBtnLink.href = dashPage;
+      backBtnLink.innerHTML = `← Back to ${dashLabel}`;
+      backBtnContainer.style.display = 'block';
+    }
+
+    // Update breadcrumbs
+    const crumbsNav = document.getElementById('crumbs-nav');
+    if (crumbsNav) {
+      crumbsNav.innerHTML = `<a href="index.html">Home</a> / <a href="${dashPage}">${isAdmin ? 'Admin' : 'Dashboard'}</a> / Contact`;
+    }
+  } else {
+    navMenu.innerHTML = `
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="login.html" class="btn btn-outline">Login</a></li>
+      <li><a href="register.html" class="btn btn-primary">Register</a></li>
+    `;
+  }
+</script>
+
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

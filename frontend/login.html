@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Sign In — ATCHMS</title>
+<meta name="description" content="Sign in to your ATCHMS student or admin account." />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    background: url('atc-building.jpg') no-repeat center center/cover;
+  }
+  
+  .bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.25) 0%, rgba(8, 61, 40, 0.4) 100%);
+    z-index: 1;
+  }
+  
+  .login-container {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Left Panel: College Brand & Info */
+  .left-panel {
+    flex: 1.2;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #ffffff;
+  }
+  
+  .left-panel-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .left-panel-brand img {
+    height: 64px;
+    width: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+  }
+  
+  .left-panel-brand h1 {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  }
+  
+  .left-panel-brand p {
+    font-size: 11px;
+    color: #ffd700;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 2px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  }
+  
+  .updates-section {
+    max-width: 520px;
+    margin-bottom: 60px;
+  }
+  
+  .updates-section h2 {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    line-height: 1.25;
+    background: linear-gradient(120deg, #ffffff 0%, #a3e2c3 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+  }
+  
+  .update-card {
+    background: rgba(8, 61, 40, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    margin-bottom: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  }
+  
+  .update-card h4 {
+    color: #ffd700;
+    font-size: 13px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  
+  .update-card p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #e5f5ed;
+  }
+  
+  /* Right Panel: Glassmorphic Login Form */
+  .right-panel {
+    flex: 0.8;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  
+  .login-card {
+    background: rgba(8, 61, 40, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 420px;
+    padding: 44px 36px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    color: #ffffff;
+  }
+  
+  .login-card h3 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  
+  .login-card p.sub {
+    font-size: 13px;
+    color: #cfe4d8;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  
+  .tab-row {
+    display: flex;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .tab-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  
+  .tab-btn.active {
+    background: var(--primary, #0B5D3B);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(8, 61, 40, 0.35);
+  }
+  
+  .field {
+    position: relative;
+    margin-bottom: 18px;
+  }
+  
+  .field input {
+    width: 100%;
+    padding: 15px 16px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 14.5px;
+    outline: none;
+    transition: all 0.25s ease;
+  }
+  
+  .field input:focus {
+    border-color: #ffd700;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+  }
+  
+  .field label {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.65);
+    pointer-events: none;
+    transition: all 0.25s ease;
+  }
+  
+  .field input:focus ~ label,
+  .field input:not(:placeholder-shown) ~ label {
+    top: -10px;
+    left: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffd700;
+    background: #082d1c;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary, #0B5D3B) 0%, #157951 100%);
+    border: none;
+    color: #ffffff;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 15px rgba(8, 61, 40, 0.3);
+    width: 100%;
+    text-align: center;
+  }
+  
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #157951 0%, #1e9d6d 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(8, 61, 40, 0.4);
+  }
+  
+  .alert {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+    display: none;
+  }
+  
+  .alert-error {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid rgba(231, 76, 60, 0.35);
+    color: #f5b7b1;
+  }
+  
+  .alert-success {
+    background: rgba(46, 204, 113, 0.2);
+    border: 1px solid rgba(46, 204, 113, 0.35);
+    color: #abebc6;
+  }
+  
+  .form-note {
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .form-note a {
+    color: #ffd700;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  
+  .form-note a:hover {
+    text-decoration: underline;
+  }
+  
+  .left-panel-footer {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: color 0.2s ease;
+  }
+  .password-toggle:hover {
+    color: #ffd700;
+  }
+  .password-toggle svg {
+    display: block;
+  }
+  .password-input {
+    padding-right: 44px !important;
+  }
+  
+  @media (max-width: 992px) {
+    body {
+      overflow: auto;
+      min-height: 100vh;
+    }
+    .left-panel { display: none; }
+    .right-panel {
+      flex: 1;
+      border-left: none;
+      padding: 30px;
+      min-height: 100vh;
+    }
+    .login-container {
+      min-height: 100vh;
+    }
+  }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<div class="bg-overlay"></div>
+
+<div class="login-container">
+  <!-- Left Side: Dynamic Info Panel -->
+  <div class="left-panel">
+    <div class="left-panel-brand">
+      <img src="atc-logo.png" alt="ATC Logo" />
+      <div>
+        <h1>Arusha Technical College</h1>
+        <p>Hostel Management System</p>
+      </div>
+    </div>
+    
+    <div class="updates-section">
+      <h2>Announcements & Updates</h2>
+      
+      <div class="update-card">
+        <h4>System Status</h4>
+        <p>Room applications for the Academic Year 2026/27 are officially open. All students are advised to submit applications before the deadline.</p>
+      </div>
+      
+      <div class="update-card">
+        <h4>GePG Dues & Billing</h4>
+        <p>Ensure that your payment control numbers are generated through the admin console prior to completing transaction references.</p>
+      </div>
+    </div>
+    
+    <div class="left-panel-footer">
+      © 2026 Arusha Technical College — ATCHMS. All rights reserved.
+    </div>
+  </div>
+  
+  <!-- Right Side: Glassmorphic Form Card -->
+  <div class="right-panel">
+    <div class="login-card">
+      <!-- ── Login View ── -->
+      <div id="login-view">
+        <h3>Sign In</h3>
+        <p class="sub">Access your student dashboard or admin console.</p>
+        
+        <div class="tab-row">
+          <button class="tab-btn active" onclick="setTab('student', this)" id="tab-student">Student</button>
+          <button class="tab-btn" onclick="setTab('admin', this)" id="tab-admin">Admin</button>
+        </div>
+        
+        <div id="alert-box" class="alert alert-error"></div>
+        
+        <form id="login-form" autocomplete="off">
+          <div class="field">
+            <input type="text" id="email" placeholder=" " required pattern="[0-9]{11}" title="Must be an 11-digit number" />
+            <label for="email" id="login-label">Admission Number</label>
+          </div>
+          <div class="field">
+            <input type="password" id="password" class="password-input" placeholder=" " required minlength="6" />
+            <label for="password">Password</label>
+            <span class="password-toggle" onclick="togglePasswordVisibility('password', this)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </span>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="login-btn">
+            Sign In
+          </button>
+          
+          <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:13.5px; font-weight:600;">
+            <a href="#" onclick="showView('forgot'); return false;" style="color:#ffd700; text-decoration:none;">Forgot password?</a>
+            <a href="register.html" style="color:#ffffff; text-decoration:none;">Register account</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── Forgot Password View ── -->
+      <div id="forgot-view" style="display: none;">
+        <h3>Reset Password</h3>
+        <p class="sub">Select your account type to reset your password.</p>
+        
+        <div id="forgot-alert-box" class="alert alert-error"></div>
+        
+        <div style="display:flex; gap:10px; margin-bottom:15px;">
+          <button type="button" id="forgot-role-student" class="btn" style="flex:1; background:rgba(255,255,255,0.2); color:#fff;" onclick="setForgotRole('student')">Student</button>
+          <button type="button" id="forgot-role-admin" class="btn" style="flex:1; background:rgba(0,0,0,0.3); color:#ccc;" onclick="setForgotRole('admin')">Administrator</button>
+        </div>
+
+        <form id="forgot-form" autocomplete="off">
+          <input type="hidden" id="forgot-role" value="student" />
+          <div class="field">
+            <input type="text" id="forgot-adm" placeholder=" " required />
+            <label for="forgot-adm" id="forgot-label">Admission Number</label>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="forgot-btn">
+            Send Reset OTP Code
+          </button>
+          
+          <div style="text-align:center; margin-top:20px; font-size:13.5px; font-weight:600;">
+            <a href="#" onclick="showView('login'); return false;" style="color:#ffffff; text-decoration:none;">← Back to Sign In</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── Reset Password View ── -->
+      <div id="reset-view" style="display: none;">
+        <h3>Complete Reset</h3>
+        <p class="sub">Enter the token received and type a new password.</p>
+        
+        <div id="reset-alert-box" class="alert alert-error"></div>
+        
+        <form id="reset-form" autocomplete="off">
+          <div class="field">
+            <input type="text" id="reset-token" placeholder=" " required minlength="6" maxlength="6" />
+            <label for="reset-token">6-Digit Reset Token</label>
+          </div>
+          <div class="field">
+            <input type="password" id="reset-password" class="password-input" placeholder=" " required minlength="8" />
+            <label for="reset-password">New Password</label>
+            <span class="password-toggle" onclick="togglePasswordVisibility('reset-password', this)">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </span>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="reset-btn">
+            Reset Password
+          </button>
+          
+          <div style="text-align:center; margin-top:20px; font-size:13.5px; font-weight:600;">
+            <a href="#" onclick="showView('login'); return false;" style="color:#ffffff; text-decoration:none;">← Cancel & Sign In</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  window.togglePasswordVisibility = (inputId, toggleEl) => {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+      input.type = 'text';
+      toggleEl.innerHTML = `
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      `;
+    } else {
+      input.type = 'password';
+      toggleEl.innerHTML = `
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        </svg>
+      `;
+    }
+  };
+
+  if (ATCHMS.isLoggedIn()) {
+    window.location.href = ATCHMS.isAdmin() ? '/atchms/admin.html' : '/atchms/dashboard.html';
+  }
+
+  let currentTab = 'student';
+  function setTab(tab, el) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    
+    const label = document.getElementById('login-label');
+    const input = document.getElementById('email');
+    if (tab === 'student') {
+      label.textContent = 'Admission Number';
+      input.type = 'text';
+      input.pattern = '[0-9]{11}';
+      input.title = 'Must be an 11-digit number';
+    } else {
+      label.textContent = 'Email Address';
+      input.type = 'email';
+      input.removeAttribute('pattern');
+      input.removeAttribute('title');
+    }
+    
+    hideAlert();
+  }
+
+  function showView(view) {
+    document.getElementById('login-view').style.display = view === 'login' ? 'block' : 'none';
+    document.getElementById('forgot-view').style.display = view === 'forgot' ? 'block' : 'none';
+    document.getElementById('reset-view').style.display = view === 'reset' ? 'block' : 'none';
+    
+    document.getElementById('alert-box').style.display = 'none';
+    document.getElementById('forgot-alert-box').style.display = 'none';
+    document.getElementById('reset-alert-box').style.display = 'none';
+
+    if (view === 'forgot') setForgotRole('student');
+  }
+
+  function setForgotRole(role) {
+    document.getElementById('forgot-role').value = role;
+    const isStudent = role === 'student';
+    document.getElementById('forgot-role-student').style.background = isStudent ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)';
+    document.getElementById('forgot-role-student').style.color = isStudent ? '#fff' : '#ccc';
+    document.getElementById('forgot-role-admin').style.background = !isStudent ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.3)';
+    document.getElementById('forgot-role-admin').style.color = !isStudent ? '#fff' : '#ccc';
+    document.getElementById('forgot-label').textContent = isStudent ? 'Admission Number' : 'Email Address';
+    document.getElementById('forgot-adm').value = '';
+    document.getElementById('forgot-adm').type = isStudent ? 'text' : 'email';
+  }
+
+  function showAlert(msg, type = 'error') {
+    const el = document.getElementById('alert-box');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  
+  function hideAlert() {
+    document.getElementById('alert-box').style.display = 'none';
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert();
+    const btn = document.getElementById('login-btn');
+    btn.textContent = 'Signing in…'; btn.disabled = true;
+
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    try {
+      const data = await ATCHMS.login(email, password);
+      if (data.error) {
+        showAlert(data.error);
+        btn.textContent = 'Sign In'; btn.disabled = false;
+        return;
+      }
+      
+      if (currentTab === 'admin' && data.user.role !== 'admin') {
+        ATCHMS.logout();
+        showAlert('This account is not an admin account.');
+        btn.textContent = 'Sign In'; btn.disabled = false;
+        return;
+      }
+      
+      showAlert('Login successful! Redirecting…', 'success');
+      setTimeout(() => {
+        window.location.href = data.user.role === 'admin'
+          ? '/atchms/admin.html'
+          : '/atchms/dashboard.html';
+      }, 600);
+    } catch (err) {
+      showAlert('Server error. Please try again.');
+      btn.textContent = 'Sign In'; btn.disabled = false;
+    }
+  });
+
+  // Forgot Form Submit
+  document.getElementById('forgot-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('forgot-btn');
+    const alertBox = document.getElementById('forgot-alert-box');
+    alertBox.style.display = 'none';
+    btn.textContent = 'Requesting…'; btn.disabled = true;
+
+    const inputVal = document.getElementById('forgot-adm').value.trim();
+    const role = document.getElementById('forgot-role').value;
+    const bodyObj = role === 'admin' ? { email: inputVal } : { admission_no: inputVal };
+
+    try {
+      const res = await ATCHMS.api('/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj)
+      });
+      if (res.error) {
+        alertBox.className = 'alert alert-error';
+        alertBox.textContent = res.error;
+        alertBox.style.display = 'block';
+        btn.textContent = 'Send Reset OTP Code'; btn.disabled = false;
+      } else {
+        alertBox.className = 'alert alert-success';
+        alertBox.textContent = res.message;
+        alertBox.style.display = 'block';
+        
+        setTimeout(() => {
+          showView('reset');
+          document.getElementById('reset-alert-box').className = 'alert alert-success';
+          document.getElementById('reset-alert-box').textContent = `${res.message} Enter the code below.`;
+          document.getElementById('reset-alert-box').style.display = 'block';
+        }, 2000);
+      }
+    } catch {
+      alertBox.className = 'alert alert-error';
+      alertBox.textContent = 'Server error requesting password reset.';
+      alertBox.style.display = 'block';
+      btn.textContent = 'Send Reset OTP Code'; btn.disabled = false;
+    }
+  });
+
+  // Reset Form Submit
+  document.getElementById('reset-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('reset-btn');
+    const alertBox = document.getElementById('reset-alert-box');
+    alertBox.style.display = 'none';
+    btn.textContent = 'Resetting…'; btn.disabled = true;
+
+    const identityVal = document.getElementById('forgot-adm').value.trim();
+    const role = document.getElementById('forgot-role').value;
+    const token = document.getElementById('reset-token').value.trim();
+    const new_password = document.getElementById('reset-password').value;
+
+    const bodyObj = role === 'admin' ? 
+      { email: identityVal, token, new_password } : 
+      { admission_no: identityVal, token, new_password };
+
+    try {
+      const res = await ATCHMS.api('/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj)
+      });
+      if (res.error) {
+        alertBox.className = 'alert alert-error';
+        alertBox.textContent = res.error;
+        alertBox.style.display = 'block';
+        btn.textContent = 'Reset Password'; btn.disabled = false;
+      } else {
+        alertBox.className = 'alert alert-success';
+        alertBox.textContent = 'Password reset successfully! Redirecting to Sign In…';
+        alertBox.style.display = 'block';
+        
+        setTimeout(() => {
+          showView('login');
+          showAlert('Password reset successfully! Please sign in with your new password.', 'success');
+        }, 2000);
+      }
+    } catch {
+      alertBox.className = 'alert alert-error';
+      alertBox.textContent = 'Server error resetting password.';
+      alertBox.style.display = 'block';
+      btn.textContent = 'Reset Password'; btn.disabled = false;
+    }
+  });
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

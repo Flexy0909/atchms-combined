@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Student Registration — ATCHMS</title>
+<meta name="description" content="Register as an ATC student to apply for hostel accommodation." />
+<link rel="stylesheet" href="style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="login.html">Login</a></li>
+      <li><a href="register.html" class="btn btn-primary active">Register</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="banner">
+  <h1>Student Registration</h1>
+  <p>Create your ATCHMS account to apply for hostel accommodation and track your application status.</p>
+  <div class="crumbs"><a href="index.html">Home</a> / Register</div>
+</section>
+
+<section class="section">
+  <div class="section-inner">
+    <div class="form-wrap">
+      <h3>Create your account</h3>
+      <p class="sub">Fill in your details from your ATC admission letter.</p>
+
+      <div id="reg-alert" style="display:none;padding:12px 16px;border-radius:10px;font-size:13.5px;margin-bottom:16px;"></div>
+
+      <form id="reg-form" autocomplete="off">
+        <div class="field">
+          <input type="text" id="first_name" placeholder=" " required />
+          <label for="first_name">First Name</label>
+        </div>
+        <div class="field">
+          <input type="text" id="middle_name" placeholder=" " />
+          <label for="middle_name">Middle Name (Optional)</label>
+        </div>
+        <div class="field">
+          <input type="text" id="last_name" placeholder=" " required />
+          <label for="last_name">Last Name</label>
+        </div>
+        <div class="field">
+          <input type="email" id="email" placeholder=" " required />
+          <label for="email">Email Address</label>
+        </div>
+        <div class="field">
+          <input type="password" id="password" placeholder=" " required minlength="6" />
+          <label for="password">Password</label>
+        </div>
+        <div class="field">
+          <input type="tel" id="phone_no" placeholder=" " required />
+          <label for="phone_no">Phone Number</label>
+        </div>
+        <div class="field">
+          <input type="text" id="admission" placeholder=" " />
+          <label for="admission">Admission Number</label>
+        </div>
+        <div class="field">
+          <select id="program_type" onchange="updateProgramCourses()" required>
+            <option value="" disabled selected hidden></option>
+            <option value="Degree Programmes">Degree Programmes</option>
+            <option value="Diploma Programmes">Diploma Programmes</option>
+            <option value="VETs Programmes">VETs Programmes</option>
+          </select>
+          <label for="program_type">Program Type</label>
+        </div>
+        <div class="field">
+          <select id="programme" required>
+            <option value="" disabled selected hidden>Select Program Type first</option>
+          </select>
+          <label for="programme">Course / Programme</label>
+        </div>
+        <div class="field">
+          <select id="year" required>
+            <option value="" disabled selected hidden>Select Program Type first</option>
+          </select>
+          <label for="year">Level / Academic Year</label>
+        </div>
+
+        <div class="form-actions">
+          <button type="reset" class="btn btn-outline">Reset</button>
+          <button type="submit" class="btn btn-primary" id="reg-btn">Create Account</button>
+        </div>
+        <p class="form-note">Already registered? <a href="login.html">Sign in here</a></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  const ATC_PROGRAMMES = {
+    "Degree Programmes": [
+      "Bachelor Degree In Computer Science",
+      "Bachelor Degree In Information Technology",
+      "Bachelor Degree In Automotive Electronics Engineering",
+      "Bachelor Degree In Electrical And Automation Engineering",
+      "Bachelor Degree In Electrical And Biomedical Engineering",
+      "Bachelor Degree In Renewable Energy Engineering",
+      "Bachelor Degree In Mechanical Engineering",
+      "Bachelor Degree In Mechatronic And Material Engineering",
+      "Bachelor Degree In Civil And Highway Engineering",
+      "Bachelor Degree In Laboratory Science And Industrial Technology",
+      "Bachelor Degree In Civil And Irrigation Engineering",
+      "Bachelor Degree In Civil Engineering"
+    ],
+    "Diploma Programmes": [
+      "Ordinary Diploma In Computer Science",
+      "Ordinary Diploma In Cyber Security And Digital Forensic",
+      "Ordinary Diploma In Information Technology",
+      "Ordinary Diploma In Multimedia And Animation Technology",
+      "Ordinary Diploma In Auto-Electric And Electronics Engineering",
+      "Ordinary Diploma In Automotive Engineering",
+      "Ordinary Diploma In Heavy Duty Equipment Engineering",
+      "Ordinary Diploma In Electrical And Biomedical Engineering",
+      "Ordinary Diploma In Electrical And Solar PV Systems Engineering",
+      "Ordinary Diploma In Electrical And Wind Energy Systems Engineering",
+      "Ordinary Diploma In Electrical Engineering",
+      "Ordinary Diploma In Electronics And Telecommunications Engineering",
+      "Ordinary Diploma In Hydropower Engineering",
+      "Ordinary Diploma In Instrumentation Engineering",
+      "Ordinary Diploma In Geology And Gemstone Processing Engineering",
+      "Ordinary Diploma In Mechanical And Bio-Energy Engineering",
+      "Ordinary Diploma In Mechanical Engineering",
+      "Ordinary Diploma In Pipe Works, Oil And Gas Engineering",
+      "Ordinary Diploma In Civil And Highway Engineering",
+      "Ordinary Diploma In Laboratory Science And Technology",
+      "Ordinary Diploma In Architecture Engineering",
+      "Ordinary Diploma In Civil And Irrigation Engineering",
+      "Ordinary Diploma In Civil Engineering"
+    ],
+    "VETs Programmes": [
+      "Ufundi Wa Viyozi Na Majokofu (Refrigeration And Air Conditioning)",
+      "Ufundi Magari (Motor Vehicle Mechanics)",
+      "Laboratory Assistant",
+      "Biashara (Business Operation Assistant)",
+      "Computer Applications",
+      "Computer Maintenance",
+      "Information Technology",
+      "Uchoraji Wa Ramani (Civil Draughting)",
+      "Ufundi Bomba (Plumbing And Pipe Fitting)",
+      "Ufundi Electroniki (Electronics)",
+      "Ufundi Mitambo (Fitter Mechanics)",
+      "Ufundi Selemara (Carpentry And Joinery)",
+      "Ufundi Ujenzi (Masonry And Brick Laying)",
+      "Ufundi Wa Mitambo Ya Uzalishaji Wa Umeme Wa Maji (Hydropower Plants Maintenance)",
+      "Ufundi Wa Uchomeleaji Na Uhunzi Wa Vyuma (Welding And Metal Fabrication)",
+      "Ufundi Wa Uchongaji Wa Vyuma Na Vipuli (Fitting And Machining)",
+      "Ufundi Wa Umeme Wa Magari (Auto Electrical)",
+      "Ufundi Wa Umeme Wa Majumbani (Domestic Electrical Installation)",
+      "Ujenzi Na Ukarabati Wa Barabara (Road Construction And Maintenance)",
+      "Ukataji Na Uchongaji Wa Madini (Gemstone Cutting And Polishing)",
+      "Utalii (Tour Guiding)"
+    ]
+  };
+
+  const ATC_LEVELS = {
+    "Degree Programmes": ["NTA Level 7-1", "NTA Level 7-2", "NTA Level 8"],
+    "Diploma Programmes": ["NTA Level 4", "NTA Level 5", "NTA Level 6"],
+    "VETs Programmes": ["NTA Level 1", "NTA Level 2", "NTA Level 3"]
+  };
+
+  function updateProgramCourses() {
+    const type = document.getElementById('program_type').value;
+    const progSel = document.getElementById('programme');
+    const yearSel = document.getElementById('year');
+
+    // Populate Courses
+    progSel.innerHTML = '<option value="" disabled selected hidden>— Select Course —</option>';
+    if (ATC_PROGRAMMES[type]) {
+      ATC_PROGRAMMES[type].forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        progSel.appendChild(opt);
+      });
+    }
+
+    // Populate Levels
+    yearSel.innerHTML = '<option value="" disabled selected hidden>— Select Level —</option>';
+    if (ATC_LEVELS[type]) {
+      ATC_LEVELS[type].forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l;
+        opt.textContent = l;
+        yearSel.appendChild(opt);
+      });
+    }
+  }
+
+  document.getElementById('reg-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertEl = document.getElementById('reg-alert');
+    const btn = document.getElementById('reg-btn');
+    alertEl.style.display = 'none';
+    btn.textContent = 'Creating…'; btn.disabled = true;
+
+    const payload = {
+      first_name   : document.getElementById('first_name').value.trim(),
+      middle_name  : document.getElementById('middle_name').value.trim(),
+      last_name    : document.getElementById('last_name').value.trim(),
+      email        : document.getElementById('email').value.trim(),
+      password     : document.getElementById('password').value,
+      phone_no     : document.getElementById('phone_no').value.trim(),
+      admission_no : document.getElementById('admission').value.trim() || null,
+      programme    : document.getElementById('programme').value || null,
+      academic_year: document.getElementById('year').value || null
+    };
+
+    try {
+      const res = await ATCHMS.api('/auth/register', {
+        method: 'POST', body: JSON.stringify(payload)
+      });
+      if (res.error) {
+        alertEl.style.cssText = 'display:block;background:#fbdcdc;color:#8a1f1f;border:1px solid #f5b8b8;padding:12px 16px;border-radius:10px;font-size:13.5px;margin-bottom:16px;';
+        alertEl.textContent = res.error;
+        btn.textContent = 'Create Account'; btn.disabled = false;
+      } else {
+        alertEl.style.cssText = 'display:block;background:#d6f1e3;color:#0a5b3a;border:1px solid #a3e2c3;padding:12px 16px;border-radius:10px;font-size:13.5px;margin-bottom:16px;';
+        alertEl.textContent = '✅ Account created! Redirecting to login…';
+        setTimeout(() => window.location.href = 'login.html', 1500);
+      }
+    } catch {
+      alertEl.style.cssText = 'display:block;background:#fbdcdc;color:#8a1f1f;padding:12px 16px;border-radius:10px;font-size:13.5px;';
+      alertEl.textContent = 'Server error. Please try again.';
+      btn.textContent = 'Create Account'; btn.disabled = false;
+    }
+  });
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

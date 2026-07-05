@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>Payments — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .pay-summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+    gap: 16px; margin-bottom: 24px;
+  }
+  .pay-card {
+    background: var(--white); border-radius: 12px; padding: 22px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+    border-top: 4px solid var(--primary);
+  }
+  .pay-card:nth-child(2) { border-top-color: var(--gold); }
+  .pay-card:nth-child(3) { border-top-color: #2aa874; }
+  .pay-card small { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  .pay-card h3 { font-size: 24px; color: var(--dark); margin-top: 6px; font-weight: 800; }
+  .pay-card p { font-size: 12.5px; color: #2aa874; font-weight: 600; margin-top: 4px; }
+  
+  .pay-form {
+    background: var(--white); border-radius: var(--radius); padding: 24px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 24px;
+  }
+  .pay-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+  .pay-row input, .pay-row select {
+    flex: 1; min-width: 180px; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 14px; color: var(--text);
+    background: #fafdfb; outline: none;
+  }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Student Panel</h5><small>ATCHMS v2.6</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="dashboard.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="my-application.html"><span class="dot"></span> My Application</a></li>
+      <li><a href="room-details.html"><span class="dot"></span> Room Details</a></li>
+      <li><a href="payments.html" class="active"><span class="dot"></span> Payments</a></li>
+      <li><a href="maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Browse Hostels</a></li>
+      <li><a href="contact.html"><span class="dot"></span> Support</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>Payments</h2>
+        <p>Your hostel fee history, control numbers and payments status.</p>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="pay-summary">
+      <div class="pay-card">
+        <small>Total Paid</small>
+        <h3 id="summary-paid">TSh 0</h3>
+        <p>Academic Year 2026/27</p>
+      </div>
+      <div class="pay-card">
+        <small>Dues Status</small>
+        <h3 id="summary-status">Cleared</h3>
+        <p id="summary-status-sub">All clear</p>
+      </div>
+    </div>
+
+    <!-- Make Payment Form (Visible only if there are pending control numbers) -->
+    <div class="pay-form" id="payment-form-panel" style="display:none;">
+      <h4 style="color:var(--dark); margin-bottom:14px;">Verify Dues & Submit Payment (GePG Portal)</h4>
+      <form id="pay-submit-form">
+        <div class="pay-row">
+          <select id="pending-control-number" required>
+            <option value="" disabled selected>Select pending control number</option>
+          </select>
+          <select id="payment-method" required>
+            <option value="M-Pesa">M-Pesa</option>
+            <option value="Tigo Pesa">Tigo Pesa</option>
+            <option value="Airtel Money">Airtel Money</option>
+            <option value="NMB Bank Transfer">NMB Bank Transfer</option>
+            <option value="CRDB Bank Transfer">CRDB Bank Transfer</option>
+          </select>
+        </div>
+        <div class="pay-row">
+          <input type="text" id="transaction-ref" placeholder="Enter Transaction / Reference Number (e.g. MP2607021)" required />
+        </div>
+        <button type="submit" id="pay-btn" class="btn btn-primary" style="width:100%;">Verify & Submit Payment</button>
+      </form>
+    </div>
+
+    <!-- Payment History -->
+    <div class="panel" style="margin-bottom:24px;">
+      <div class="page-head" style="margin-bottom:14px;">
+        <h4 style="color:var(--dark);">Payment History & Control Numbers</h4>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Control Number</th><th>Description</th><th>Amount</th><th>Status</th><th>Date Created</th>
+            </tr>
+          </thead>
+          <tbody id="payments-tbody">
+            <tr><td colspan="5" style="text-align:center;">Loading payment records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<script src="api.js?v=2.6"></script>
+<script>
+  if (ATCHMS.requireStudent()) {
+    async function loadPayments() {
+      try {
+        const payments = await ATCHMS.api('/payments');
+        
+        // Sum total paid
+        const totalPaid = payments.filter(p => p.status === 'paid').reduce((acc, p) => acc + parseFloat(p.amount), 0);
+        document.getElementById('summary-paid').textContent = `TSh ${totalPaid.toLocaleString()}`;
+
+        // Status Card
+        const pendingPayments = payments.filter(p => p.status === 'pending');
+        const hasPending = pendingPayments.length > 0;
+        document.getElementById('summary-status').textContent = hasPending ? 'Pending Dues' : 'No Dues';
+        document.getElementById('summary-status-sub').textContent = hasPending ? 'Action required' : 'All clear';
+
+        // Load Pending Select Options
+        const select = document.getElementById('pending-control-number');
+        if (hasPending) {
+          document.getElementById('payment-form-panel').style.display = 'block';
+          select.innerHTML = '<option value="" disabled selected>Select pending control number</option>' +
+            pendingPayments.map(p => `<option value="${p.control_number}">${p.payment_type} — ${p.control_number} (TSh ${parseFloat(p.amount).toLocaleString()})</option>`).join('');
+        } else {
+          document.getElementById('payment-form-panel').style.display = 'none';
+        }
+
+        const tbody = document.getElementById('payments-tbody');
+        if (payments.length > 0) {
+          tbody.innerHTML = payments.map(p => `
+            <tr>
+              <td data-label="Control #"><code>${p.control_number}</code></td>
+              <td data-label="Type">${p.payment_type}</td>
+              <td data-label="Amount">TSh ${parseFloat(p.amount).toLocaleString()}</td>
+              <td data-label="Status"><span class="badge ${ATCHMS.badgeClass(p.status)}">${p.status}</span></td>
+              <td data-label="Date">${ATCHMS.fmtDate(p.created_at)}</td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No payment records found.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Submit Payment Verification Simulation
+    document.getElementById('pay-submit-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('pay-btn');
+      btn.textContent = 'Verifying...'; btn.disabled = true;
+
+      const payload = {
+        control_number: document.getElementById('pending-control-number').value,
+        transaction_reference: document.getElementById('transaction-ref').value.trim(),
+        payment_method: document.getElementById('payment-method').value
+      };
+
+      try {
+        const res = await ATCHMS.api('/payments/pay', {
+          method: 'POST', body: JSON.stringify(payload)
+        });
+        if (res.error) {
+          ATCHMS.alert(res.error, "Error");
+        } else {
+          ATCHMS.alert('✅ Payment verified and marked as PAID successfully!', "Success");
+          document.getElementById('pay-submit-form').reset();
+          loadPayments();
+        }
+      } catch {
+        ATCHMS.alert('Server error verifying payment', "Error");
+      } finally {
+        btn.textContent = 'Verify & Submit Payment'; btn.disabled = false;
+      }
+    });
+
+    loadPayments();
+  }
+</script>
+<!-- Bottom Navigation Bar for Mobile -->
+<div class="bottom-nav">
+  <a href="dashboard.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="my-application.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+    <span>Apply</span>
+  </a>
+  <a href="room-details.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>
+    <span>Room</span>
+  </a>
+  <a href="payments.html" class="bottom-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>Payments</span>
+  </a>
+  <a href="maintenance.html" class="bottom-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    <span>Maintenance</span>
+  </a>
+</div>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>

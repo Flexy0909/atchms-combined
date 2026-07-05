@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/png" href="atc-logo.png" />
+<title>My Application — ATCHMS</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  .app-timeline { list-style: none; position: relative; padding-left: 28px; margin: 0; }
+  .app-timeline::before {
+    content: ""; position: absolute; left: 8px; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .app-timeline li {
+    position: relative; padding: 0 0 28px 20px;
+  }
+  .app-timeline li::before {
+    content: ""; position: absolute; left: -24px; top: 4px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--border); border: 2px solid var(--white);
+    box-shadow: 0 0 0 2px var(--border);
+  }
+  .app-timeline li.done::before { background: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+  .app-timeline li.active-step::before { background: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+  .app-timeline li strong { color: var(--dark); font-size: 14.5px; }
+  .app-timeline li small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 999px;
+    font-weight: 700; font-size: 15px;
+  }
+  .status-pill.approved { background: #d6f1e3; color: #0a5b3a; }
+  .status-pill.pending { background: #fbf0cf; color: #7a5c10; }
+  .status-pill.rejected { background: #fbdcdc; color: #8a1f1f; }
+
+  /* 3D Room Picker Styles */
+  .canvas-container {
+    width: 100%;
+    height: 320px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+    position: relative;
+  }
+  .room-picker-box {
+    margin-top: 24px;
+    border-top: 2px dashed var(--border);
+    padding-top: 20px;
+  }
+  .bed-btn {
+    border: 1px solid var(--border);
+    background: var(--white);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  .bed-btn.active {
+    background: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+  }
+  .bed-btn:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+</style>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0B5D3B" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ATCHMS" />
+<link rel="apple-touch-icon" href="icons/icon-192x192.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png" />
+<link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png" />
+</head>
+<body>
+
+<header class="header">
+  <nav class="nav">
+    <a href="index.html" class="brand">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div class="brand-text"><h1>Arusha Technical College</h1><p>Hostel Management System</p></div>
+    </a>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle" style="display: none;">
+    <label for="nav-toggle" class="nav-toggle-label">
+      <span></span>
+      <span></span>
+      <span></span>
+    </label>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="hostels.html">Hostels</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="brand-logo"><img src="atc-logo.png" alt="ATC Logo" /></div>
+      <div><h5>Student Panel</h5><small>ATCHMS v2.6</small></div>
+    </div>
+    <ul class="side-menu">
+      <li><a href="dashboard.html"><span class="dot"></span> Overview</a></li>
+      <li><a href="my-application.html" class="active"><span class="dot"></span> My Application</a></li>
+      <li><a href="room-details.html"><span class="dot"></span> Room Details</a></li>
+      <li><a href="payments.html"><span class="dot"></span> Payments</a></li>
+      <li><a href="maintenance.html"><span class="dot"></span> Maintenance</a></li>
+      <li><a href="hostels.html"><span class="dot"></span> Browse Hostels</a></li>
+      <li><a href="profile.html"><span class="dot"></span> My Profile</a></li>
+      <li><a href="contact.html"><span class="dot"></span> Support</a></li>
+      <li><a href="#" onclick="ATCHMS.logout(); return false;"><span class="dot"></span> Logout</a></li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h2>My Application</h2>
+        <p>Track the status and details of your hostel accommodation application.</p>
+      </div>
+      <span class="status-pill" id="header-status">—</span>
+    </div>
+
+    <div class="dash-grid" id="main-grid" style="display:none;">
+      <div>
+        <!-- Application Summary -->
+        <div class="panel" style="margin-bottom:24px;">
+          <h4>Application Summary</h4>
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="details-table">
+              <tbody>
+                <tr><td>Application ID</td><td><strong id="app-id">—</strong></td></tr>
+                <tr><td>Applicant</td><td id="app-fullname">—</td></tr>
+                <tr><td>Admission Number</td><td id="app-admission">—</td></tr>
+                <tr><td>Programme</td><td id="app-programme">—</td></tr>
+                <tr><td>Preferred Hostel</td><td id="app-hostel">—</td></tr>
+                <tr><td>Submitted</td><td id="app-date">—</td></tr>
+                <tr><td>Remarks</td><td id="app-remarks">—</td></tr>
+                <tr><td>Status</td><td><span class="badge" id="app-badge">—</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3D Room / Bed Selector Panel (Only if approved & not allocated) -->
+        <div class="panel room-picker-box" id="3d-selector-panel" style="display:none; margin-bottom:24px;">
+          <h4 style="margin-bottom:6px;">Select Room & Bed (3D Interface)</h4>
+          <p style="color:var(--muted); font-size:13.5px; margin-bottom:16px;">
+            Your application is approved. Choose a room and vacant bed slot using our interactive 3D portal.
+          </p>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:16px;">
+            <div>
+              <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">Choose Room</label>
+              <select id="room-select" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1px solid var(--border);" onchange="onRoomChange()">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:10px;">
+              <button class="btn btn-outline" style="height:40px; font-size:13px; flex:1;" onclick="toggleTourMode()">🎥 Toggle 360° Tour</button>
+            </div>
+          </div>
+
+          <div id="room-canvas" class="canvas-container"></div>
+          
+          <div style="margin-bottom:20px;">
+            <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px;">Beds Layout</label>
+            <div id="bed-selection-buttons" style="display:flex; gap:12px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="confirm-selection-btn" disabled onclick="submitRoomSelection()">Confirm Bed Allocation</button>
+        </div>
+      </div>
+
+      <aside>
+        <!-- Application Timeline -->
+        <div class="panel" style="margin-bottom:24px;">
+          <h4>Application Timeline</h4>
+          <ul class="app-timeline" style="margin-top:14px;" id="timeline-list">
+            <!-- Dynamically populated -->
+          </ul>
+        </div>
+
+        <!-- Actions -->
+        <div class="panel">
+          <h4>Actions</h4>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+            <a href="maintenance.html?type=room-change#new-ticket" class="btn btn-primary" style="text-align:center;">Request Room Change</a>
+            <a href="payments.html" class="btn btn-outline" style="text-align:center;">View Receipts</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <div id="no-app" class="panel" style="display:none; text-align:center; padding:50px;">
+      <h3 style="color:var(--dark); margin-bottom:12px;">No Active Applications</h3>
+      <p style="color:var(--muted); margin-bottom:24px;">You have not submitted a hostel application yet for this academic semester.</p>
+      <a href="hostels.html" class="btn btn-primary">Browse Hostels & Apply</a>
+    </div>
+  </main>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="footer-bottom">© 2026 Arusha Technical College — ATCHMS.</div>
+</footer>
+
+<!-- CDN Dependencies for 3D Visualizer -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="room3d.js?v=3.2"></script>
+<script src="api.js?v=2.6"></script>
+
+<script>
+  if (ATCHMS.requireStudent()) {
+    const user = ATCHMS.getUser();
+    let currentApp = null;
+    let preferredRooms = [];
+    let selectedRoomDetails = null;
+    let selectedBedLabel = null;
+    let active3DInstance = null;
+    let tourModeActive = false;
+
+    async function loadApplicationDetails() {
+      try {
+        const apps = await ATCHMS.api('/applications');
+        if (apps && apps.length > 0) {
+          const app = apps[0];
+          currentApp = app;
+          document.getElementById('main-grid').style.display = 'grid';
+
+          // Status Pill Header
+          const statusPill = document.getElementById('header-status');
+          statusPill.className = `status-pill ${app.status}`;
+          statusPill.textContent = app.status.toUpperCase();
+
+          // Table fields
+          document.getElementById('app-id').textContent = `#APP-2026-00${app.id}`;
+          document.getElementById('app-fullname').textContent = user.fullname;
+          document.getElementById('app-admission').textContent = user.admission_no || 'N/A';
+          document.getElementById('app-programme').textContent = `${user.programme || 'N/A'} — ${user.academic_year || 'N/A'}`;
+          document.getElementById('app-hostel').textContent = app.hostel_name;
+          document.getElementById('app-date').textContent = ATCHMS.fmtDate(app.submitted_date);
+          document.getElementById('app-remarks').textContent = app.remarks || 'None';
+          
+          const badge = document.getElementById('app-badge');
+          badge.className = `badge ${ATCHMS.badgeClass(app.status)}`;
+          badge.textContent = app.status;
+
+          // 1. Fetch related allocation and payment details to build timeline
+          let allocation = null;
+          let payment = null;
+          try {
+            const allocRes = await ATCHMS.api('/allocations/my');
+            if (allocRes && allocRes.allocated) allocation = allocRes;
+          } catch(e) { console.log(e); }
+
+          try {
+            const payments = await ATCHMS.api('/payments');
+            if (payments && payments.length > 0) payment = payments[0];
+          } catch(e) { console.log(e); }
+
+          // Show 3D selector panel if application is approved AND there is no room allocation yet
+          if (app.status === 'approved' && !allocation) {
+            document.getElementById('3d-selector-panel').style.display = 'block';
+            await loadPreferredRooms(app.preferred_hostel_id);
+          } else {
+            document.getElementById('3d-selector-panel').style.display = 'none';
+          }
+
+          // Timeline populating
+          const timeline = document.getElementById('timeline-list');
+          
+          const stage1Class = 'done';
+          const stage2Class = (app.status === 'approved' || app.status === 'rejected') ? 'done' : 'active-step';
+          
+          let stage3Class = 'pending';
+          if (app.status === 'approved') {
+            stage3Class = allocation ? 'done' : 'active-step';
+          } else if (app.status === 'rejected') {
+            stage3Class = 'blocked';
+          }
+
+          let stage4Class = 'pending';
+          if (allocation) {
+            stage4Class = (payment && payment.status === 'paid') ? 'done' : 'active-step';
+          } else if (app.status === 'rejected') {
+            stage4Class = 'blocked';
+          }
+
+          let steps = `
+            <li class="${stage1Class}">
+              <strong>1. Application Submitted</strong>
+              <small>${ATCHMS.fmtDate(app.submitted_date)} — Form verified successfully</small>
+            </li>
+          `;
+
+          if (app.status === 'rejected') {
+            steps += `
+              <li class="active-step" style="color:#c0392b;">
+                <strong>2. Verification Rejected ❌</strong>
+                <small>${app.remarks || 'No remarks provided.'}</small>
+              </li>
+              <li class="blocked">
+                <strong>3. Room Allocation</strong>
+                <small>Cancelled due to rejection</small>
+              </li>
+              <li class="blocked">
+                <strong>4. Payment & lease</strong>
+                <small>Cancelled due to rejection</small>
+              </li>
+            `;
+          } else {
+            steps += `
+              <li class="${stage2Class}">
+                <strong>2. Verification & Review</strong>
+                <small>${app.status === 'approved' ? `Approved on ${ATCHMS.fmtDate(app.decision_date)}` : 'Under review by warden'}</small>
+              </li>
+              <li class="${stage3Class}">
+                <strong>3. Room Allocation</strong>
+                <small>${allocation ? `Room ${allocation.room_number} allocated (${allocation.hostel_name})` : (app.status === 'approved' ? 'Processing room assignment…' : 'Awaiting application approval')}</small>
+              </li>
+              <li class="${stage4Class}">
+                <strong>4. Payment & Lease</strong>
+                <small>${(payment && payment.status === 'paid') ? 'Paid — Lease active' : (allocation ? `Pending payment (Control No: ${payment ? payment.control_number : 'Generating…'})` : 'Awaiting room allocation')}</small>
+              </li>
+            `;
+          }
+          
+          timeline.innerHTML = steps;
+
+        } else {
+          document.getElementById('no-app').style.display = 'block';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function loadPreferredRooms(hostelId) {
+      try {
+        const rooms = await ATCHMS.api('/rooms');
+        // Filter rooms that belong to this block and are not full
+        preferredRooms = rooms.filter(r => r.hostel_id == hostelId && r.occupied_count < r.capacity);
+        
+        const select = document.getElementById('room-select');
+        if (preferredRooms.length > 0) {
+          select.innerHTML = preferredRooms.map(r => `<option value="${r.id}">Room ${r.room_number} (${r.capacity - r.occupied_count} vacant)</option>`).join('');
+          await onRoomChange();
+        } else {
+          select.innerHTML = '<option value="">No vacant rooms in this block</option>';
+          document.getElementById('room-canvas').innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center;">No available rooms. You are placed on the waitlist.</div>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    window.onRoomChange = async () => {
+      const roomId = document.getElementById('room-select').value;
+      if (!roomId) return;
+
+      selectedBedLabel = null;
+      document.getElementById('confirm-selection-btn').disabled = true;
+
+      try {
+        selectedRoomDetails = await ATCHMS.api(`/rooms/${roomId}/details`);
+        initOrUpdate3D();
+        renderBedButtons();
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    function initOrUpdate3D() {
+      if (active3DInstance) {
+        active3DInstance.destroy();
+      }
+
+      const container = document.getElementById('room-canvas');
+      const room = selectedRoomDetails.room;
+      const allocations = selectedRoomDetails.allocations;
+
+      if (tourModeActive) {
+        active3DInstance = ATCHMS3D.initVirtualTour(container, room.photo_url);
+      } else {
+        active3DInstance = ATCHMS3D.init3DRoom(container, room, allocations, (bedLabel) => {
+          selectBed(bedLabel);
+        }, selectedBedLabel);
+      }
+    }
+
+    window.toggleTourMode = () => {
+      tourModeActive = !tourModeActive;
+      initOrUpdate3D();
+    };
+
+    function renderBedButtons() {
+      const container = document.getElementById('bed-selection-buttons');
+      const room = selectedRoomDetails.room;
+      const capacity = room.capacity || 2;
+      const allocations = selectedRoomDetails.allocations;
+
+      let labels = [];
+      if (room.layout_json) {
+        try {
+          const layout = typeof room.layout_json === 'string' ? JSON.parse(room.layout_json) : room.layout_json;
+          if (layout && layout.assets) {
+            labels = layout.assets
+              .filter(a => a.type === 'single_bed' || a.type === 'bunk_bed')
+              .map(a => a.label);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (labels.length === 0) {
+        labels = capacity === 2 ? ['Bed A', 'Bed B'] : ['Bed A', 'Bed B', 'Bed C', 'Bed D'];
+      }
+
+      container.innerHTML = labels.map(label => {
+        const occupied = allocations.some(a => a.bed_label === label);
+        const activeClass = selectedBedLabel === label ? 'active' : '';
+        const disabledAttr = occupied ? 'disabled' : '';
+        const statusText = occupied ? 'Occupied' : 'Vacant';
+
+        return `
+          <button class="bed-btn ${activeClass}" ${disabledAttr} onclick="selectBed('${label}')">
+            ${label} (${statusText})
+          </button>
+        `;
+      }).join('');
+    }
+
+    window.selectBed = (bedLabel) => {
+      selectedBedLabel = bedLabel;
+      document.getElementById('confirm-selection-btn').disabled = false;
+      
+      // Update UI button highlights
+      renderBedButtons();
+      // Redraw 3D to show selection
+      initOrUpdate3D();
+    };
+
+    window.submitRoomSelection = async () => {
+      const roomId = document.getElementById('room-select').value;
+      if (!roomId || !selectedBedLabel) {
+        ATCHMS.alert('Please select a room and bed first.');
+        return;
+      }
+
+      try {
+        const res = await ATCHMS.api('/applications/select-room', {
+          method: 'POST',
+          body: JSON.stringify({ room_id: roomId, bed_label: selectedBedLabel })
+        });
+
+        if (res.success) {
+          ATCHMS.alert('✅ Room and Bed allocated successfully! Your invoice is active.', "Success").then(() => {
+            window.location.reload();
+          });
+        } else {
+          ATCHMS.alert(res.error || 'Room selection failed');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadApplicationDetails();
+  }
+</script>
+<script src="chatbot.js?v=1.0"></script>
+</body>
+</html>
