@@ -97,6 +97,7 @@ const pool = mysql.createPool({
         academic_year VARCHAR(50) DEFAULT NULL,
         phone_no VARCHAR(20) DEFAULT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
     `);
     
     try {
