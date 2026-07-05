@@ -62,7 +62,8 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || 'AtcHms2026!',
   database: process.env.DB_NAME     || 'atc_hostel_db',
   waitForConnections: true,
-  connectionLimit: 10
+  connectionLimit: 10,
+  ssl: (process.env.DB_HOST && (process.env.DB_HOST.includes('clever-cloud') || process.env.DB_HOST.includes('railway'))) ? { rejectUnauthorized: false } : false
 });
 
 // Auto-initialize Tables
