@@ -1,8 +1,13 @@
 /* ATCHMS Frontend API Helper — include in every page */
 (function () {
-  // Determine base folder path dynamically (e.g. "/atchms/" or "/")
-  const BASE_PATH = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-  const API = BASE_PATH + 'api';
+  // When deployed to Vercel, use the VPS backend URL directly.
+  // Falls back to relative path when running on the same VPS.
+  const VPS_API = 'http://185.202.236.94/atchms/api';
+  const IS_VERCEL = window.location.hostname !== '185.202.236.94' &&
+                    !window.location.hostname.includes('localhost') &&
+                    !window.location.hostname.includes('127.0.0.1');
+  const BASE_PATH = IS_VERCEL ? '' : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+  const API = IS_VERCEL ? VPS_API : BASE_PATH + 'api';
 
   window.ATCHMS = {
     getToken : () => sessionStorage.getItem('atchms_token'),

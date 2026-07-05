@@ -56,8 +56,13 @@ app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 const pool = mysql.createPool({
-  host: '127.0.0.1', user: 'atchms', password: 'AtcHms2026!',
-  database: 'atc_hostel_db', waitForConnections: true, connectionLimit: 10
+  host:     process.env.DB_HOST     || '127.0.0.1',
+  port:     process.env.DB_PORT     || 3306,
+  user:     process.env.DB_USER     || 'atchms',
+  password: process.env.DB_PASSWORD || 'AtcHms2026!',
+  database: process.env.DB_NAME     || 'atc_hostel_db',
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
 // Auto-initialize Tables
