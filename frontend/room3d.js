@@ -1,61 +1,78 @@
-/**
- * ATCHMS 3D Room & Bed Visualizer & Virtual Tour Library
- * Uses Three.js and OrbitControls to create premium interactive experiences.
- */
-(function() {
+/* ATCHMS 3D Room Renderer & Panorama Tour Helper */
+(function () {
   window.ATCHMS3D = {
     /**
-     * Initializes a 3D Room Viewer in the target container.
+     * Initializes an Interactive 3D Room Viewer in the target container.
+     * Supports custom room layouts, double-decker frames, rose-brown vacant beds, and dynamic floating labels.
      */
-    init3DRoom: function(container, room, allocations = [], onBedSelect = null, currentSelectedBed = null) {
+    init3DRoom: function(container, room, allocations, onBedSelect, currentSelectedBed) {
       if (!container) return;
       container.innerHTML = '';
       container.style.position = 'relative';
 
-      // Load CDN dependencies if not present
       if (typeof THREE === 'undefined') {
         container.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">Loading Three.js...</div>';
         return;
       }
 
-      const width = container.clientWidth || 500;
-      const height = container.clientHeight || 350;
+      const width = container.clientWidth || 400;
+      const height = container.clientHeight || 300;
 
-      // 1. Scene, Camera, Renderer
+      // 1. Setup Three.js Scene, Camera, Renderer
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color('#f0f5f2');
+      scene.background = new THREE.Color('#f8f5ee'); // TanStack matching background
 
-      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-      camera.position.set(6, 6, 8);
+      const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+      camera.position.set(7, 6, 9);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(width, height);
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.shadowMap.enabled = true;
       container.appendChild(renderer.domElement);
 
-      // 2. Orbit Controls
-      let controls;
+      // Create Tooltip Overlay
+      const tooltip = document.createElement('div');
+      tooltip.style.position = 'absolute';
+      tooltip.style.background = 'rgba(15, 23, 42, 0.95)';
+      tooltip.style.color = '#fff';
+      tooltip.style.padding = '8px 12px';
+      tooltip.style.borderRadius = '8px';
+      tooltip.style.fontSize = '12px';
+      tooltip.style.fontFamily = 'Inter, system-ui, sans-serif';
+      tooltip.style.pointerEvents = 'none';
+      tooltip.style.display = 'none';
+      tooltip.style.zIndex = '99';
+      tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      tooltip.style.border = '1px solid rgba(255,255,255,0.15)';
+      container.appendChild(tooltip);
+
+      // Create Floating 3D Labels Overlay Container
+      const labelsOverlay = document.createElement('div');
+      labelsOverlay.id = 'room3d-labels-overlay';
+      labelsOverlay.style.position = 'absolute';
+      labelsOverlay.style.top = '0';
+      labelsOverlay.style.left = '0';
+      labelsOverlay.style.width = '100%';
+      labelsOverlay.style.height = '100%';
+      labelsOverlay.style.pointerEvents = 'none';
+      labelsOverlay.style.overflow = 'hidden';
+      labelsOverlay.style.zIndex = '10';
+      container.appendChild(labelsOverlay);
+
+      // 2. Setup OrbitControls
+      let controls = null;
       if (typeof THREE.OrbitControls !== 'undefined') {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
-      } else if (THREE.examples && THREE.examples.controls && THREE.examples.controls.OrbitControls) {
-        controls = new THREE.examples.controls.OrbitControls(camera, renderer.domElement);
-      } else if (window.OrbitControls) {
-        controls = new window.OrbitControls(camera, renderer.domElement);
-      } else {
-        // Fallback controls if library loading differs
-        controls = { update: () => {} };
-      }
-      if (controls.enableDamping) {
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-      }
-      if (controls.maxPolarAngle) {
         controls.maxPolarAngle = Math.PI / 2 - 0.05; // don't go below floor
+        controls.minDistance = 3;
+        controls.maxDistance = 25;
       }
 
       // 3. Lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       scene.add(ambientLight);
 
       const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -63,51 +80,42 @@
       dirLight.castShadow = true;
       scene.add(dirLight);
 
-      // 4. Room Floor and Walls
-      const floorGeo = new THREE.BoxGeometry(7, 0.2, 7);
-      const floorMat = new THREE.MeshStandardMaterial({ color: '#d2b48c', roughness: 0.8 }); // wood color
+      // 4. Room Floor and Walls based on dynamic room sizes
+      const w = room.width || 6;
+      const d = room.depth || 5;
+      const h = room.height || 3;
+
+      // Grid helper
+      const gridHelper = new THREE.GridHelper(Math.max(w, d), Math.max(w, d) * 2, '#cbd5e1', '#e2e8f0');
+      gridHelper.position.y = 0.005;
+      scene.add(gridHelper);
+
+      // Floor (light grey matching the React screenshot)
+      const floorGeo = new THREE.BoxGeometry(w, 0.1, d);
+      const floorMat = new THREE.MeshStandardMaterial({ color: '#cccccc', roughness: 0.8 });
       const floor = new THREE.Mesh(floorGeo, floorMat);
-      floor.position.y = -0.1;
+      floor.position.y = -0.05;
       floor.receiveShadow = true;
       scene.add(floor);
 
+      // Walls
+      const wallMat = new THREE.MeshStandardMaterial({ color: '#dddddd', roughness: 0.9 });
+      
       // Back Wall
-      const wallMat = new THREE.MeshStandardMaterial({ color: '#eef2f0', roughness: 0.9 });
-      const backWallGeo = new THREE.BoxGeometry(7, 4, 0.2);
-      const backWall = new THREE.Mesh(backWallGeo, wallMat);
-      backWall.position.set(0, 2, -3.5);
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), wallMat);
+      backWall.position.set(0, h/2, -d/2);
       scene.add(backWall);
 
       // Left Wall
-      const leftWallGeo = new THREE.BoxGeometry(0.2, 4, 7);
-      const leftWall = new THREE.Mesh(leftWallGeo, wallMat);
-      leftWall.position.set(-3.5, 2, 0);
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, d), wallMat);
+      leftWall.position.set(-w/2, h/2, 0);
       scene.add(leftWall);
 
-      // Door (represented on left wall)
-      const doorGeo = new THREE.BoxGeometry(0.05, 2.5, 1.2);
-      const doorMat = new THREE.MeshStandardMaterial({ color: '#8b5a2b' });
-      const door = new THREE.Mesh(doorGeo, doorMat);
-      door.position.set(-3.4, 1.25, 2.2);
-      scene.add(door);
-
-      // Window (represented on back wall)
-      const windowGeo = new THREE.BoxGeometry(2.5, 1.5, 0.05);
-      const windowMat = new THREE.MeshStandardMaterial({ color: '#87ceeb', transparent: true, opacity: 0.5 });
-      const win = new THREE.Mesh(windowGeo, windowMat);
-      win.position.set(0, 2.2, -3.45);
-      scene.add(win);
-
-      // Window frame
-      const frameGeo = new THREE.BoxGeometry(2.6, 1.6, 0.1);
-      const frameMat = new THREE.MeshStandardMaterial({ color: '#555555' });
-      const frame = new THREE.Mesh(frameGeo, frameMat);
-      frame.position.set(0, 2.2, -3.48);
-      scene.add(frame);
-
-      // 5. Add Assets (either from custom layout or default fallback)
+      // 5. Asset Placement Arrays
       const bedObjects = [];
+      const labelTrackers = []; // { id, mesh, yOffset, label, isVip }
       let layout = null;
+
       if (room.layout_json) {
         try {
           layout = typeof room.layout_json === 'string' ? JSON.parse(room.layout_json) : room.layout_json;
@@ -116,10 +124,18 @@
         }
       }
 
-      if (layout && layout.assets && layout.assets.length > 0) {
-        const woodMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.9 });
-        const metalMat = new THREE.MeshStandardMaterial({ color: '#475569', metalness: 0.8, roughness: 0.2 });
+      const woodMat = new THREE.MeshStandardMaterial({ color: '#8b5a2b', roughness: 0.9 }); // Warm brown cupboard/doors
+      const darkFrameMat = new THREE.MeshStandardMaterial({ color: '#1e293b', metalness: 0.5, roughness: 0.5 }); // Dark bunk bed frame
+      const lightBlueMat = new THREE.MeshStandardMaterial({ color: '#8ecae6', transparent: true, opacity: 0.7, roughness: 0.1 }); // Windows
 
+      function getBedColor(bedLabel, allocation) {
+        if (allocation) return '#6b6b6b'; // Taken/occupied (grey)
+        if (currentSelectedBed === bedLabel) return '#4ade80'; // Selected (green)
+        return '#c98a7d'; // Vacant (rose-brown sheets)
+      }
+
+      // If a custom layout is available, load it
+      if (layout && layout.assets && layout.assets.length > 0) {
         layout.assets.forEach(asset => {
           const x3d = (asset.x - 300) / 100;
           const z3d = (asset.y - 200) / 100;
@@ -130,211 +146,295 @@
           meshGroup.rotation.y = angleRad;
 
           if (asset.type === 'single_bed') {
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.9), woodMat);
-            frame.position.y = 0.075;
+            // Bed frame
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 2.0), woodMat);
+            frame.position.y = 0.15;
             meshGroup.add(frame);
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.05), woodMat);
-            head.position.set(0, 0.2, -0.425);
-            meshGroup.add(head);
-            
-            const allocation = allocations.find(a => a.bed_label === asset.label);
-            let color = '#34d399'; // vacant
-            if (allocation) {
-              color = '#f87171'; // occupied
-            } else if (currentSelectedBed === asset.label) {
-              color = '#fef08a'; // selected
-            }
-            const sheetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
-            const mattress = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.12, 0.84), sheetMat);
-            mattress.position.set(0, 0.2, 0.01);
-            meshGroup.add(mattress);
-            const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.18), new THREE.MeshStandardMaterial({ color: '#ffffff' }));
-            pillow.position.set(0, 0.27, -0.3);
-            meshGroup.add(pillow);
 
-            meshGroup.userData = { label: asset.label, allocation: allocation };
+            // Bed sheet color logic
+            const allocation = allocations.find(a => a.bed_label === asset.label);
+            const color = getBedColor(asset.label, allocation);
+            
+            const sheetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+            const mattress = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.2, 1.9), sheetMat);
+            mattress.position.set(0, 0.3, 0);
+            meshGroup.add(mattress);
+
+            mattress.userData = { isBed: true, label: asset.label, allocation: allocation };
             bedObjects.push(mattress);
+
+            // Add to Label trackers
+            labelTrackers.push({
+              mesh: mattress,
+              yOffset: 0.45,
+              label: asset.label,
+              isVip: asset.vip
+            });
           }
           else if (asset.type === 'bunk_bed') {
-            const postGeo = new THREE.BoxGeometry(0.04, 1.6, 0.04);
-            for (let px of [-0.23, 0.23]) {
-              for (let pz of [-0.43, 0.43]) {
-                const post = new THREE.Mesh(postGeo, woodMat);
-                post.position.set(px, 0.8, pz);
+            // Four dark posts
+            const postGeo = new THREE.BoxGeometry(0.08, 1.8, 0.08);
+            for (let px of [-0.46, 0.46]) {
+              for (let pz of [-0.96, 0.96]) {
+                const post = new THREE.Mesh(postGeo, darkFrameMat);
+                post.position.set(px, 0.9, pz);
                 meshGroup.add(post);
               }
             }
-            const lowerFrame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.9), woodMat);
+            
+            // Upper & Lower frames
+            const lowerFrame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 2.0), darkFrameMat);
             lowerFrame.position.y = 0.15;
             meshGroup.add(lowerFrame);
-            const upperFrame = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.9), woodMat);
-            upperFrame.position.y = 1.15;
+            
+            const upperFrame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 2.0), darkFrameMat);
+            upperFrame.position.y = 1.05;
             meshGroup.add(upperFrame);
 
-            const allocation = allocations.find(a => a.bed_label === asset.label);
-            let color = '#34d399';
-            if (allocation) {
-              color = '#f87171';
-            } else if (currentSelectedBed === asset.label) {
-              color = '#fef08a';
-            }
-            const lowerSheetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
-            const lowerMattress = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.1, 0.84), lowerSheetMat);
-            lowerMattress.position.set(0, 0.22, 0);
+            // Split the labels (e.g. "Bunk A/B")
+            const parts = asset.label.split('/');
+            const lowerLabel = parts[0] ? parts[0].trim() : (asset.label + ' Lower');
+            const upperLabel = parts[1] ? parts[1].trim() : (asset.label + ' Upper');
+
+            // Lower Mattress
+            const lowerAllocation = allocations.find(a => a.bed_label === lowerLabel);
+            const lowerColor = getBedColor(lowerLabel, lowerAllocation);
+            const lowerSheetMat = new THREE.MeshStandardMaterial({ color: lowerColor, roughness: 0.7 });
+            const lowerMattress = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 1.9), lowerSheetMat);
+            lowerMattress.position.set(0, 0.25, 0);
             meshGroup.add(lowerMattress);
-            
-            const upperMattress = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.1, 0.84), new THREE.MeshStandardMaterial({ color: '#a78bfa', roughness: 0.7 }));
-            upperMattress.position.set(0, 1.22, 0);
+
+            lowerMattress.userData = { isBed: true, label: lowerLabel, allocation: lowerAllocation };
+            bedObjects.push(lowerMattress);
+
+            // Upper Mattress
+            const upperAllocation = allocations.find(a => a.bed_label === upperLabel);
+            const upperColor = getBedColor(upperLabel, upperAllocation);
+            const upperSheetMat = new THREE.MeshStandardMaterial({ color: upperColor, roughness: 0.7 });
+            const upperMattress = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 1.9), upperSheetMat);
+            upperMattress.position.set(0, 1.15, 0);
             meshGroup.add(upperMattress);
 
-            const pillowMat = new THREE.MeshStandardMaterial({ color: '#ffffff' });
-            const pillowLower = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.18), pillowMat);
-            pillowLower.position.set(0, 0.28, -0.3);
-            meshGroup.add(pillowLower);
-            const pillowUpper = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.04, 0.18), pillowMat);
-            pillowUpper.position.set(0, 1.28, -0.3);
-            meshGroup.add(pillowUpper);
-            
-            const ladder = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.2, 0.12), woodMat);
-            ladder.position.set(0.24, 0.6, 0.2);
-            meshGroup.add(ladder);
+            upperMattress.userData = { isBed: true, label: upperLabel, allocation: upperAllocation };
+            bedObjects.push(upperMattress);
 
-            meshGroup.userData = { label: asset.label, allocation: allocation };
-            bedObjects.push(lowerMattress);
+            // Add both to labels tracker
+            labelTrackers.push(
+              { mesh: lowerMattress, yOffset: 0.45, label: lowerLabel, isVip: asset.vip },
+              { mesh: upperMattress, yOffset: 1.35, label: upperLabel, isVip: asset.vip }
+            );
           }
           else if (asset.type === 'table') {
-            const top = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.03, 0.35), woodMat);
-            top.position.y = 0.585;
+            const top = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.06, 0.7), woodMat);
+            top.position.y = 0.77;
             meshGroup.add(top);
-            const legGeo = new THREE.BoxGeometry(0.03, 0.57, 0.03);
-            for (let lx of [-0.2, 0.2]) {
-              for (let lz of [-0.15, 0.15]) {
+            const legGeo = new THREE.BoxGeometry(0.06, 0.74, 0.06);
+            for (let lx of [-0.44, 0.44]) {
+              for (let lz of [-0.29, 0.29]) {
                 const leg = new THREE.Mesh(legGeo, woodMat);
-                leg.position.set(lx, 0.285, lz);
+                leg.position.set(lx, 0.37, lz);
                 meshGroup.add(leg);
               }
             }
           }
           else if (asset.type === 'chair') {
-            const legGeo = new THREE.BoxGeometry(0.025, 0.34, 0.025);
-            for (let lx of [-0.11, 0.11]) {
-              for (let lz of [-0.11, 0.11]) {
+            const legGeo = new THREE.BoxGeometry(0.05, 0.44, 0.05);
+            for (let lx of [-0.18, 0.18]) {
+              for (let lz of [-0.18, 0.18]) {
                 const leg = new THREE.Mesh(legGeo, woodMat);
-                leg.position.set(lx, 0.17, lz);
+                leg.position.set(lx, 0.22, lz);
                 meshGroup.add(leg);
               }
             }
-            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.02, 0.25), woodMat);
-            seat.position.y = 0.35;
-            meshGroup.add(seat);
-            const backPostGeo = new THREE.BoxGeometry(0.02, 0.32, 0.02);
-            for (let lx of [-0.11, 0.11]) {
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.42), woodMat);
+            seat.position.y = 0.46;
+            group.add(seat);
+            
+            const backPostGeo = new THREE.BoxGeometry(0.04, 0.46, 0.04);
+            for (let lx of [-0.18, 0.18]) {
               const bp = new THREE.Mesh(backPostGeo, woodMat);
-              bp.position.set(lx, 0.51, -0.11);
+              bp.position.set(lx, 0.69, -0.18);
               meshGroup.add(bp);
             }
-            const back = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.02), woodMat);
-            back.position.set(0, 0.58, -0.11);
+            const back = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.2, 0.04), woodMat);
+            back.position.set(0, 0.8, -0.18);
             meshGroup.add(back);
           }
           else if (asset.type === 'cupboard') {
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.4, 0.35), woodMat);
-            body.position.y = 0.7;
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.0, 0.6), woodMat);
+            body.position.y = 1.0;
             meshGroup.add(body);
-            const doorLine = new THREE.Mesh(new THREE.BoxGeometry(0.01, 1.36, 0.36), metalMat);
-            doorLine.position.set(0, 0.7, 0.01);
-            meshGroup.add(doorLine);
-            const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.02), metalMat);
-            h1.position.set(-0.04, 0.7, 0.185);
-            meshGroup.add(h1);
-            const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.02), metalMat);
-            h2.position.set(0.04, 0.7, 0.185);
-            meshGroup.add(h2);
           }
+          else if (asset.type === 'window') {
+            const winMesh = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.0, 0.1), lightBlueMat);
+            winMesh.position.y = 1.4;
+            meshGroup.add(winMesh);
+          }
+          else if (asset.type === 'door') {
+            const doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.1, 0.08), new THREE.MeshStandardMaterial({ color: '#a0522d', roughness: 0.9 }));
+            doorMesh.position.y = 1.05;
+            meshGroup.add(doorMesh);
+          }
+
+          meshGroup.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
 
           scene.add(meshGroup);
         });
 
       } else {
+        // FALLBACK TEMPLATE: Generate default layout template based on capacity
         const capacity = room.capacity || 2;
         const positions = [];
         const labels = [];
+        const isBunk = capacity > 2;
+
         if (capacity === 2) {
-          positions.push({ x: -1.8, z: -0.2 }, { x: 1.8, z: -0.2 });
+          positions.push({ x: -1.6, z: 0 }, { x: 1.6, z: 0 });
           labels.push('Bed A', 'Bed B');
+        } else if (capacity === 4) {
+          positions.push({ x: -1.6, z: 0 }, { x: 1.6, z: 0 });
+          labels.push('Bunk A/B', 'Bunk C/D');
         } else {
-          positions.push(
-            { x: -1.9, z: -1.8 },
-            { x: -1.9, z: 1.5 },
-            { x: 1.9, z: -1.8 },
-            { x: 1.9, z: 1.5 }
-          );
-          labels.push('Bed A', 'Bed B', 'Bed C', 'Bed D');
+          positions.push({ x: -1.6, z: -1.2 }, { x: -1.6, z: 1.2 }, { x: 1.6, z: 0 });
+          labels.push('Bunk A/B', 'Bunk C/D', 'Bunk E/F');
         }
 
-        const tooltip = document.createElement('div');
-        tooltip.style.position = 'absolute';
-        tooltip.style.background = 'rgba(15, 23, 42, 0.95)';
-        tooltip.style.color = '#fff';
-        tooltip.style.padding = '8px 12px';
-        tooltip.style.borderRadius = '8px';
-        tooltip.style.fontSize = '12px';
-        tooltip.style.fontFamily = 'Inter, system-ui, sans-serif';
-        tooltip.style.pointerEvents = 'none';
-        tooltip.style.display = 'none';
-        tooltip.style.zIndex = '99';
-        tooltip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        container.appendChild(tooltip);
+        positions.forEach((pos, idx) => {
+          const rawLabel = labels[idx];
+          const meshGroup = new THREE.Group();
+          meshGroup.position.set(pos.x, 0, pos.z);
+          meshGroup.rotation.y = pos.x < 0 ? Math.PI / 2 : -Math.PI / 2;
 
-        labels.forEach((label, idx) => {
-          const pos = positions[idx];
-          const allocation = allocations.find(a => a.bed_label === label);
+          if (!isBunk) {
+            // Fallback Single Bed
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.3, 2.0), woodMat);
+            frame.position.y = 0.15;
+            meshGroup.add(frame);
 
-          const bedGroup = new THREE.Group();
-          bedGroup.position.set(pos.x, 0, pos.z);
-          bedGroup.userData = { label, allocation };
+            const allocation = allocations.find(a => a.bed_label === rawLabel);
+            const color = getBedColor(rawLabel, allocation);
+            const sheetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
+            const mattress = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.2, 1.9), sheetMat);
+            mattress.position.set(0, 0.3, 0);
+            meshGroup.add(mattress);
 
-          const frameGeo = new THREE.BoxGeometry(1.4, 0.4, 2.4);
-          const woodMat = new THREE.MeshStandardMaterial({ color: '#5c4033', roughness: 0.9 });
-          const frame = new THREE.Mesh(frameGeo, woodMat);
-          frame.position.y = 0.2;
-          frame.castShadow = true;
-          frame.receiveShadow = true;
-          bedGroup.add(frame);
+            mattress.userData = { isBed: true, label: rawLabel, allocation: allocation };
+            bedObjects.push(mattress);
 
-          const sheetGeo = new THREE.BoxGeometry(1.3, 0.25, 2.3);
-          let color = '#a7f3d0';
-          if (allocation) {
-            color = '#fecaca';
-          } else if (currentSelectedBed === label) {
-            color = '#fef08a';
-          }
-          const sheetMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.7 });
-          const sheet = new THREE.Mesh(sheetGeo, sheetMat);
-          sheet.position.y = 0.45;
-          sheet.castShadow = true;
-          bedGroup.add(sheet);
-
-          const pillowGeo = new THREE.BoxGeometry(1.0, 0.1, 0.5);
-          const pillowMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.6 });
-          const pillow = new THREE.Mesh(pillowGeo, pillowMat);
-          pillow.position.set(0, 0.6, -0.8);
-          pillow.castShadow = true;
-          bedGroup.add(pillow);
-
-          const deskTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.8), woodMat);
-          deskTop.position.set(pos.x > 0 ? pos.x - 0.9 : pos.x + 0.9, 0.8, pos.z - 0.4);
-          scene.add(deskTop);
-          for (let lx of [-0.4, 0.4]) {
-            for (let lz of [-0.3, 0.3]) {
-              const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8), woodMat);
-              leg.position.set((pos.x > 0 ? pos.x - 0.9 : pos.x + 0.9) + lx, 0.4, (pos.z - 0.4) + lz);
-              scene.add(leg);
+            labelTrackers.push({
+              mesh: mattress,
+              yOffset: 0.45,
+              label: rawLabel,
+              isVip: false
+            });
+          } else {
+            // Fallback Bunk Bed
+            const postGeo = new THREE.BoxGeometry(0.08, 1.8, 0.08);
+            for (let px of [-0.46, 0.46]) {
+              for (let pz of [-0.96, 0.96]) {
+                const post = new THREE.Mesh(postGeo, darkFrameMat);
+                post.position.set(px, 0.9, pz);
+                meshGroup.add(post);
+              }
             }
+            
+            const lowerFrame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 2.0), darkFrameMat);
+            lowerFrame.position.y = 0.15;
+            meshGroup.add(lowerFrame);
+            
+            const upperFrame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 2.0), darkFrameMat);
+            upperFrame.position.y = 1.05;
+            meshGroup.add(upperFrame);
+
+            const parts = rawLabel.split('/');
+            const lowerLabel = parts[0] ? parts[0].trim() : 'Bed A';
+            const upperLabel = parts[1] ? parts[1].trim() : 'Bed B';
+
+            // Lower
+            const lowerAllocation = allocations.find(a => a.bed_label === lowerLabel);
+            const lowerColor = getBedColor(lowerLabel, lowerAllocation);
+            const lowerMattress = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 1.9), new THREE.MeshStandardMaterial({ color: lowerColor, roughness: 0.7 }));
+            lowerMattress.position.set(0, 0.25, 0);
+            meshGroup.add(lowerMattress);
+            lowerMattress.userData = { isBed: true, label: lowerLabel, allocation: lowerAllocation };
+            bedObjects.push(lowerMattress);
+
+            // Upper
+            const upperAllocation = allocations.find(a => a.bed_label === upperLabel);
+            const upperColor = getBedColor(upperLabel, upperAllocation);
+            const upperMattress = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.18, 1.9), new THREE.MeshStandardMaterial({ color: upperColor, roughness: 0.7 }));
+            upperMattress.position.set(0, 1.15, 0);
+            meshGroup.add(upperMattress);
+            upperMattress.userData = { isBed: true, label: upperLabel, allocation: upperAllocation };
+            bedObjects.push(upperMattress);
+
+            labelTrackers.push(
+              { mesh: lowerMattress, yOffset: 0.45, label: lowerLabel, isVip: false },
+              { mesh: upperMattress, yOffset: 1.35, label: upperLabel, isVip: false }
+            );
           }
 
-          scene.add(bedGroup);
-          bedObjects.push(sheet);
+          meshGroup.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          scene.add(meshGroup);
+        });
+
+        // Spawn a default wardrobe/cupboard
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.0, 0.6), woodMat);
+        body.position.set(0, 1.0, -d/2 + 0.35);
+        scene.add(body);
+      }
+
+      // Rebuild HTML Label elements
+      rebuildFloatingLabelsDOM();
+
+      function rebuildFloatingLabelsDOM() {
+        labelsOverlay.innerHTML = '';
+        labelTrackers.forEach((t, idx) => {
+          const div = document.createElement('div');
+          div.id = `room3d-label-${idx}`;
+          div.className = 'room3d-floating-label';
+          
+          // CSS style matching the React screenshot (rounded black bubble)
+          div.style.position = 'absolute';
+          div.style.transform = 'translate(-50%, -50%)';
+          div.style.background = 'rgba(15, 23, 42, 0.95)';
+          div.style.color = '#ffffff';
+          div.style.padding = '3px 7px';
+          div.style.borderRadius = '4px';
+          div.style.fontSize = '9.5px';
+          div.style.fontWeight = '700';
+          div.style.fontFamily = 'Inter, system-ui, sans-serif';
+          div.style.whiteSpace = 'nowrap';
+          div.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
+          div.style.border = t.isVip ? '1px solid #fbbf24' : '1px solid rgba(255,255,255,0.1)';
+          div.style.pointerEvents = 'auto';
+          div.style.cursor = t.mesh.userData.allocation ? 'not-allowed' : 'pointer';
+          
+          let text = t.label;
+          if (t.mesh.userData.allocation) {
+            text += ' • taken';
+            div.style.opacity = '0.7';
+          }
+          div.textContent = text;
+
+          div.addEventListener('click', () => {
+            if (!t.mesh.userData.allocation && onBedSelect) {
+              onBedSelect(t.label);
+            }
+          });
+
+          labelsOverlay.appendChild(div);
         });
       }
 
@@ -351,7 +451,7 @@
         const intersects = raycaster.intersectObjects(bedObjects);
 
         if (intersects.length > 0) {
-          const hoveredBed = intersects[0].object.parent;
+          const hoveredBed = intersects[0].object;
           const label = hoveredBed.userData.label;
           const alloc = hoveredBed.userData.allocation;
 
@@ -390,7 +490,7 @@
         const intersects = raycaster.intersectObjects(bedObjects);
 
         if (intersects.length > 0) {
-          const clickedBed = intersects[0].object.parent;
+          const clickedBed = intersects[0].object;
           const label = clickedBed.userData.label;
           const alloc = clickedBed.userData.allocation;
 
@@ -402,6 +502,38 @@
 
       renderer.domElement.addEventListener('mousemove', onMouseMove);
       renderer.domElement.addEventListener('click', onClick);
+
+      // Dynamic projector: Maps 3D coordinates of bed mesh onto the 2D HTML labels overlay
+      const tempV = new THREE.Vector3();
+      function updateFloatingLabels() {
+        const rect = renderer.domElement.getBoundingClientRect();
+        labelTrackers.forEach((t, idx) => {
+          const div = document.getElementById(`room3d-label-${idx}`);
+          if (!div) return;
+
+          tempV.copy(t.mesh.position);
+          
+          // Get absolute world position by applying parent group matrices
+          t.mesh.updateWorldMatrix(true, false);
+          tempV.setFromMatrixPosition(t.mesh.matrixWorld);
+          
+          tempV.y += t.yOffset; // add mattress heights offset
+          tempV.project(camera);
+
+          // Don't show labels behind camera
+          if (tempV.z > 1) {
+            div.style.display = 'none';
+            return;
+          }
+
+          const x = (tempV.x * .5 + .5) * rect.width;
+          const y = (tempV.y * -.5 + .5) * rect.height;
+
+          div.style.display = 'block';
+          div.style.left = `${x}px`;
+          div.style.top = `${y}px`;
+        });
+      }
 
       // Window resize listener
       const resizeObserver = new ResizeObserver(entries => {
@@ -420,6 +552,7 @@
       function animate() {
         animId = requestAnimationFrame(animate);
         if (controls) controls.update();
+        updateFloatingLabels();
         renderer.render(scene, camera);
       }
       animate();
@@ -433,6 +566,9 @@
           renderer.dispose();
           if (container.contains(renderer.domElement)) {
             container.removeChild(renderer.domElement);
+          }
+          if (container.contains(tooltip)) {
+            container.removeChild(tooltip);
           }
         }
       };
@@ -451,101 +587,55 @@
         return;
       }
 
-      const width = container.clientWidth || 600;
-      const height = container.clientHeight || 400;
+      const width = container.clientWidth || 400;
+      const height = container.clientHeight || 300;
 
-      // Create Scene, Camera, Renderer
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(75, width / height, 1, 1100);
-      camera.target = new THREE.Vector3(0, 0, 0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
       container.appendChild(renderer.domElement);
 
-      // Create Sphere Geometry
       const geometry = new THREE.SphereGeometry(500, 60, 40);
-      geometry.scale(-1, 1, 1); // invert the geometry to project texture on the inside
+      geometry.scale(-1, 1, 1);
 
-      // Create Dynamic Panoramic Texture Canvas
       const canvas = document.createElement('canvas');
       canvas.width = 2048;
       canvas.height = 1024;
       const ctx = canvas.getContext('2d');
 
-      // DRAW MOCK ROOM INTERIOR PANORAMA
-      // Sky/Landscape view (seen from windows)
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, '#1e293b');
-      grad.addColorStop(0.35, '#3b82f6');
-      grad.addColorStop(0.5, '#93c5fd');
-      grad.addColorStop(0.51, '#1e3a8a');
-      grad.addColorStop(0.7, '#14532d');
-      grad.addColorStop(1, '#854d0e');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Room walls & panels
+      // Draw high-quality virtual 360 classroom panorama
       ctx.fillStyle = '#f8fafc';
-      // Render interior walls
-      ctx.fillRect(0, 300, 2048, 424);
-      // Wood baseboards
-      ctx.fillStyle = '#854d0e';
-      ctx.fillRect(0, 710, 2048, 14);
+      ctx.fillRect(0, 0, 2048, 1024);
 
-      // Floor (Wooden parquet simulation)
-      const floorGrad = ctx.createLinearGradient(0, 724, 0, 1024);
-      floorGrad.addColorStop(0, '#78350f');
-      floorGrad.addColorStop(1, '#451a03');
-      ctx.fillStyle = floorGrad;
-      ctx.fillRect(0, 724, 2048, 300);
+      // Floor (Warm parquet brown)
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(0, 512, 2048, 512);
 
-      // Draw Floor Planks lines
-      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-      ctx.lineWidth = 2;
-      for (let w = 0; w < 2048; w += 100) {
+      // Wall panel stripes
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 4;
+      for (let x = 0; x < 2048; x += 128) {
         ctx.beginPath();
-        ctx.moveTo(w, 724);
-        ctx.lineTo(w + 120, 1024);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, 1024);
         ctx.stroke();
       }
 
-      // Draw Room features (Beds, Desks, Doors, ATC Logo painting)
-      // Left Wall Door
-      ctx.fillStyle = '#451a03';
-      ctx.fillRect(100, 320, 140, 390); // Door
-      ctx.fillStyle = '#facc15';
-      ctx.beginPath();
-      ctx.arc(220, 520, 6, 0, Math.PI * 2);
-      ctx.fill(); // brass handle
+      // Windows
+      ctx.fillStyle = '#bfdbfe';
+      ctx.fillRect(200, 200, 300, 200);
+      ctx.fillRect(800, 200, 300, 200);
+      ctx.fillRect(1400, 200, 300, 200);
 
-      // ATC Logo frame on Back Wall
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(800, 330, 240, 160); // Painting frame
-      ctx.fillStyle = '#065f46';
-      ctx.fillRect(810, 340, 220, 140); // canvas
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px Outfit, Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('ATC HOSTEL', 920, 410);
-      ctx.font = '20px Outfit, Inter, sans-serif';
-      ctx.fillStyle = '#facc15';
-      ctx.fillText('Virtual 3D Room Tour', 920, 440);
-
-      // Window Frame looking outside
-      ctx.fillStyle = '#1e293b';
-      ctx.fillRect(1400, 320, 340, 200); // Window exterior frame
-      ctx.fillStyle = '#87ceeb';
-      ctx.fillRect(1410, 330, 320, 180); // glass pane
-      // Draw Window pane details
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(1570, 330);
-      ctx.lineTo(1570, 510);
-      ctx.moveTo(1410, 420);
-      ctx.lineTo(1730, 420);
-      ctx.stroke();
+      // Window frames
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(200, 200, 300, 200);
+      ctx.strokeRect(800, 200, 300, 200);
+      ctx.strokeRect(1400, 200, 300, 200);
 
       // Beds in 360 panorama
       ctx.fillStyle = '#1e3a8a'; // Blue bed covers
@@ -561,7 +651,6 @@
       // Create Three.js Texture from Canvas
       let texture;
       if (photoUrl && photoUrl !== 'dynamic_virtual_tour_room' && !photoUrl.includes('atc-building.jpg')) {
-        // Load custom panorama if provided
         const loader = new THREE.TextureLoader();
         texture = loader.load(photoUrl);
       } else {
@@ -572,7 +661,6 @@
       const mesh = new THREE.Mesh(geometry, material);
       scene.add(mesh);
 
-      // Navigation Help Text overlay
       const help = document.createElement('div');
       help.style.position = 'absolute';
       help.style.bottom = '16px';
@@ -588,7 +676,6 @@
       help.innerText = '↕ Drag to rotate view (360° Virtual Tour) ↕';
       container.appendChild(help);
 
-      // Drag interaction variables
       let isUserInteracting = false,
         onPointerDownPointerX = 0, onPointerDownPointerY = 0,
         onPointerDownLon = 0, onPointerDownLat = 0,
@@ -632,7 +719,6 @@
         onPointerUp(e);
       }
 
-      // Resize observer
       const resizeObserver = new ResizeObserver(entries => {
         for (let entry of entries) {
           const w = entry.contentRect.width || width;
@@ -644,7 +730,6 @@
       });
       resizeObserver.observe(container);
 
-      // Animation Render Loop
       let animId;
       function animate() {
         animId = requestAnimationFrame(animate);
