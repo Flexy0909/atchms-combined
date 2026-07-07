@@ -172,15 +172,15 @@ const pool = mysql.createPool({
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.SMTP_USER || 'urbanwash01@gmail.com',
-    pass: process.env.SMTP_PASS || 'qtbdhdlhlbdmfkts'
+    user: process.env.SMTP_USER || 'atc.hostels.management@gmail.com',
+    pass: process.env.SMTP_PASS || 'auvuuvxihrvznajr'
   }
 });
 
 const sendEmailAlert = async (to, subject, text, html) => {
   try {
     await transporter.sendMail({
-      from: `"ATCHMS Notifications" <${process.env.SMTP_USER || 'urbanwash01@gmail.com'}>`,
+      from: `"ATCHMS Notifications" <${process.env.SMTP_USER || 'atc.hostels.management@gmail.com'}>`,
       to,
       subject,
       text,
@@ -515,7 +515,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     
     // Send email alert with Nodemailer
     const mailOptions = {
-      from: `"ATCHMS Support" <${process.env.SMTP_USER || 'urbanwash01@gmail.com'}>`,
+      from: `"ATCHMS Support" <${process.env.SMTP_USER || 'atc.hostels.management@gmail.com'}>`,
       to: targetEmail,
       subject: 'ATCHMS Password Reset Token',
       text: `Hello,\n\nYou have requested to reset your password on ATCHMS. Your 6-digit one-time reset token is: ${token}\n\nThis token will expire in 15 minutes.`,
