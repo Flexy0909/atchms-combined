@@ -62,8 +62,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || 'AtcHms2026!',
   database: process.env.DB_NAME     || 'atc_hostel_db',
   waitForConnections: true,
-  connectionLimit: 10,
-  ssl: (process.env.DB_HOST && (process.env.DB_HOST.includes('clever-cloud') || process.env.DB_HOST.includes('railway'))) ? { rejectUnauthorized: false } : false
+  connectionLimit: 10
 });
 
 // Auto-initialize Tables
@@ -100,14 +99,65 @@ const pool = mysql.createPool({
       )
     `);
     
+    // Blacklist table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS blacklist (
+        admission_no VARCHAR(100) PRIMARY KEY,
+        reason TEXT NULL,
+        blacklisted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // System settings table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value VARCHAR(255) NOT NULL
+      )
+    `);
+
+    // Seed default settings if empty
+    const [existingSettings] = await pool.query("SELECT COUNT(*) AS count FROM system_settings");
+    if (existingSettings[0].count === 0) {
+      const defaults = [
+        ['require_gepg', 'true'],
+        ['auto_release', 'true'],
+        ['allow_swaps', 'false'],
+        ['enable_waitlist', 'false'],
+        ['sms_notifications', 'true'],
+        ['weight_med', '40'],
+        ['weight_year', '30'],
+        ['weight_dist', '20'],
+        ['weight_gpa', '10'],
+        ['quota_q1', '45'],
+        ['quota_q2', '35'],
+        ['quota_q3', '20']
+      ];
+      for (const [key, value] of defaults) {
+        await pool.query("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?)", [key, value]);
+      }
+    }
+
     try {
-      await pool.query("ALTER TABLE rooms ADD COLUMN IF NOT EXISTS layout_json TEXT NULL");
+      await pool.query("ALTER TABLE users ADD COLUMN is_superadmin TINYINT DEFAULT 0");
+    } catch (alterErr) {}
+
+    try {
+      await pool.query("UPDATE users SET is_superadmin = 1 WHERE role = 'admin'");
+    } catch (alterErr) {}
+
+    try {
+      await pool.query("ALTER TABLE user_profiles ADD COLUMN disability_description TEXT NULL");
+    } catch (alterErr) {}
+
+    try {
+      await pool.query("ALTER TABLE rooms ADD COLUMN layout_json TEXT NULL");
     } catch (alterErr) {
       console.log('Skipping rooms ALTER TABLE:', alterErr.message);
     }
 
     try {
-      await pool.query("ALTER TABLE allocations ADD COLUMN IF NOT EXISTS bed_label VARCHAR(50) NULL");
+      await pool.query("ALTER TABLE allocations ADD COLUMN bed_label VARCHAR(50) NULL");
     } catch (alterErr) {
       console.log('Skipping allocations ALTER TABLE:', alterErr.message);
     }
@@ -118,24 +168,19 @@ const pool = mysql.createPool({
   }
 })();
 
-// Nodemailer SMTP setup
+// Nodemailer SMTP setup using Gmail Service
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port: parseInt(process.env.SMTP_PORT || '587'),
+  service: 'gmail',
   auth: {
-    user: process.env.SMTP_USER || 'ethereal_user_placeholder',
-    pass: process.env.SMTP_PASS || 'ethereal_pass_placeholder'
+    user: process.env.SMTP_USER || 'urbanwash01@gmail.com',
+    pass: process.env.SMTP_PASS || 'qtbdhdlhlbdmfkts'
   }
 });
 
 const sendEmailAlert = async (to, subject, text, html) => {
   try {
-    if (!process.env.SMTP_USER || process.env.SMTP_USER.includes('placeholder')) {
-      console.log(`✉️ [EMAIL LOG] to: ${to} | subject: ${subject}\ntext: ${text}`);
-      return;
-    }
     await transporter.sendMail({
-      from: '"ATCHMS Notifications" <noreply@atc.ac.tz>',
+      from: `"ATCHMS Notifications" <${process.env.SMTP_USER || 'urbanwash01@gmail.com'}>`,
       to,
       subject,
       text,
@@ -285,8 +330,18 @@ app.post('/api/auth/register', async (req, res) => {
   if (!phoneRegex.test(phone_no)) {
     return res.status(400).json({ error: 'Phone number must be exactly 10 digits starting with 0 (e.g. 0713445667).' });
   }
-  if (admission_no && !admRegex.test(admission_no)) {
-    return res.status(400).json({ error: 'Admission Number must follow the 11-digit numeric format (e.g. 25050512146).' });
+  if (admission_no) {
+    if (!admRegex.test(admission_no)) {
+      return res.status(400).json({ error: 'Admission Number must follow the 11-digit numeric format (e.g. 25050512146).' });
+    }
+    try {
+      const [blacklistCheck] = await pool.execute('SELECT admission_no FROM blacklist WHERE admission_no = ?', [admission_no]);
+      if (blacklistCheck.length > 0) {
+        return res.status(403).json({ error: 'This admission number has been blacklisted. Registration blocked.' });
+      }
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
   }
 
   try {
@@ -372,6 +427,14 @@ app.post('/api/auth/login', rateLimitMiddleware, async (req, res) => {
     }
     
     const user = rows[0];
+    if (user.admission_no) {
+      const [bl] = await pool.execute('SELECT admission_no FROM blacklist WHERE admission_no = ?', [user.admission_no]);
+      if (bl.length > 0) {
+        await logAction(email, 'failed_login', 'Blacklisted admission number blocked', req);
+        return res.status(403).json({ error: 'Your admission number has been blacklisted. Access denied.' });
+      }
+    }
+
     if (!(await bcrypt.compare(password, user.password_hash))) {
       if (!loginAttempts[ip]) loginAttempts[ip] = { count: 0, lastAttempt: 0 };
       loginAttempts[ip].count++;
@@ -452,32 +515,63 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     
     // Send email alert with Nodemailer
     const mailOptions = {
-      from: '"ATCHMS Support" <noreply@atc.ac.tz>',
+      from: `"ATCHMS Support" <${process.env.SMTP_USER || 'urbanwash01@gmail.com'}>`,
       to: targetEmail,
       subject: 'ATCHMS Password Reset Token',
       text: `Hello,\n\nYou have requested to reset your password on ATCHMS. Your 6-digit one-time reset token is: ${token}\n\nThis token will expire in 15 minutes.`,
-      html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-               <h2 style="color: #0B5D3B;">Arusha Technical College</h2>
-               <h3>Password Reset Verification Code</h3>
-               <p>Hello,</p>
-               <p>Your one-time verification token to reset your password is:</p>
-               <div style="font-size: 24px; font-weight: bold; background: #f4fdf8; color: #0B5D3B; padding: 12px 24px; display: inline-block; letter-spacing: 4px; border-radius: 6px; margin: 10px 0;">${token}</div>
-               <p>This token will expire in 15 minutes. If you did not request this reset, please ignore this email.</p>
-               <br/>
-               <small style="color: #888;">Arusha Technical College Hostel Management System (ATCHMS)</small>
+      html: `<div style="font-family: 'Inter', -apple-system, sans-serif; background-color: #f8f5ee; padding: 30px; margin: 0;">
+               <div style="max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+                 <!-- Header -->
+                 <div style="background-color: #0B5D3B; padding: 24px; text-align: center;">
+                   <img src="https://atchms.duckdns.org/atchms/atc-logo.png" alt="ATC Logo" style="width: 50px; height: auto; margin-bottom: 8px;">
+                   <h1 style="color: #ffffff; margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; line-height: 1.2;">Arusha Technical College</h1>
+                   <p style="color: #fbbf24; margin: 4px 0 0; font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Hostel Management System</p>
+                 </div>
+
+                 <!-- Content -->
+                 <div style="padding: 30px 24px; color: #1e293b; line-height: 1.6;">
+                   <h2 style="font-size: 16px; margin-top: 0; color: #0B5D3B; font-weight: 700;">Password Reset Verification</h2>
+                   <p>Hello,</p>
+                   <p>We received a request to reset the password for your account on the ATCHMS portal.</p>
+                   <p>Please use the following 6-digit secure one-time verification token to complete your request:</p>
+                   
+                   <!-- Token Highlight -->
+                   <div style="text-align: center; margin: 24px 0;">
+                     <div style="font-size: 26px; font-weight: bold; background: #f0fdf4; color: #0B5D3B; padding: 12px 30px; display: inline-block; letter-spacing: 6px; border-radius: 6px; border: 1px dashed rgba(11,93,59,0.3);">${token}</div>
+                   </div>
+
+                   <p style="margin-bottom: 0;">This code will expire in **15 minutes**. If you did not request this reset, you can safely ignore this email.</p>
+                 </div>
+
+                 <!-- Footer -->
+                 <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11.5px; color: #64748b; border-top: 1px solid #e2e8f0;">
+                   <p style="font-weight: bold; margin: 0 0 4px; color: #1e293b;">Warden & Student Accommodation Office</p>
+                   <p style="margin: 0 0 4px;">Arusha Technical College, P.O. Box 296, Arusha, Tanzania</p>
+                   <p style="margin: 0;">Contact: <a href="mailto:hostels@atc.ac.tz" style="color: #0B5D3B; text-decoration: none;">hostels@atc.ac.tz</a></p>
+                 </div>
+               </div>
              </div>`
     };
-    
+
+    // Verify SMTP auth first — fails fast with a clear error if credentials are wrong
+    try {
+      await transporter.verify();
+    } catch (verifyErr) {
+      console.error('SMTP auth verification failed:', verifyErr.message);
+      return res.status(500).json({ error: 'Email service is currently unavailable. Please contact the administrator.' });
+    }
+
+    // Send the email — if this fails, tell the user clearly
     try {
       await transporter.sendMail(mailOptions);
     } catch (mailErr) {
-      console.error('Nodemailer failed, logging token:', mailErr.message);
+      console.error('Email delivery failed:', mailErr.message);
+      return res.status(500).json({ error: 'Failed to send reset email. Please try again later or contact support.' });
     }
 
     res.json({
       success: true,
-      message: `Reset token sent to ${targetEmail}!`,
-      token: token
+      message: `Reset code sent to your email (${targetEmail}). Check your inbox and spam folder.`
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1201,7 +1295,7 @@ app.get('/api/admin/users', auth, adminOnly, async (req, res) => {
   try {
     const [r] = await pool.execute(
       `SELECT u.id, u.fullname, u.email, u.admission_no, u.programme, u.academic_year,
-              u.phone_no, u.role, u.created_at,
+              u.phone_no, u.role, u.is_superadmin, u.created_at,
               p.avatar_url, p.gender
        FROM users u
        LEFT JOIN user_profiles p ON u.id = p.user_id
@@ -1209,6 +1303,68 @@ app.get('/api/admin/users', auth, adminOnly, async (req, res) => {
     );
     res.json(r);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+app.put('/api/admin/users/:id', auth, adminOnly, async (req, res) => {
+  const userId = req.params.id;
+  const { fullname, email, phone_no, role, gender, programme, academic_year, admission_no } = req.body;
+  
+  if (!fullname || !email) {
+    return res.status(400).json({ error: 'Full name and email are required.' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email address format.' });
+  }
+
+  try {
+    // Update base user info
+    await pool.execute(
+      `UPDATE users SET fullname=?, email=?, phone_no=?, role=?, programme=?, academic_year=?, admission_no=? WHERE id=?`,
+      [fullname, email, phone_no || null, role || 'student', programme || null, academic_year || null, admission_no || null, userId]
+    );
+
+    // Sync profile details
+    const [profileRows] = await pool.execute('SELECT * FROM user_profiles WHERE user_id=?', [userId]);
+    if (profileRows.length > 0) {
+      await pool.execute(
+        `UPDATE user_profiles SET gender=?, programme=?, academic_year=?, phone_no=? WHERE user_id=?`,
+        [gender || 'male', programme || null, academic_year || null, phone_no || null, userId]
+      );
+    } else {
+      await pool.execute(
+        `INSERT INTO user_profiles (user_id, gender, programme, academic_year, phone_no) VALUES (?, ?, ?, ?, ?)`,
+        [userId, gender || 'male', programme || null, academic_year || null, phone_no || null]
+      );
+    }
+
+    await logAction(req.user.email, 'admin_user_update', `Updated profile of user account id ${userId}`, req);
+    res.json({ success: true, message: 'User profile updated successfully!' });
+  } catch (e) {
+    if (e.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Email or Admission number already in use by another user.' });
+    }
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/users/:id', auth, adminOnly, async (req, res) => {
+  const userId = req.params.id;
+  try {
+    // Clean up related records
+    await pool.execute('DELETE FROM allocations WHERE student_id = ?', [userId]);
+    await pool.execute('DELETE FROM payments WHERE student_id = ?', [userId]);
+    await pool.execute('DELETE FROM applications WHERE student_id = ?', [userId]);
+    await pool.execute('DELETE FROM user_profiles WHERE user_id = ?', [userId]);
+    await pool.execute('DELETE FROM users WHERE id = ?', [userId]);
+    
+    await logAction(req.user.email, 'admin_user_deletion', `Deleted user account id ${userId}`, req);
+    res.json({ success: true, message: 'User account and related logs deleted successfully.' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 /* ── ADMISSIONS WHITELIST (admin) ── */
@@ -1546,6 +1702,226 @@ app.post('/api/chatbot', async (req, res) => {
 
     // 4. Absolute Failure state
     return res.status(500).json({ error: "All cloud chatbot engines are currently unreachable." });
+});
+
+/* ── SUPER ADMIN MIDDLEWARE ── */
+const superAdminOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'admin' && req.user.is_superadmin) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Access denied: Super Admin only' });
+  }
+};
+
+/* ── BLACKLIST ── */
+app.get('/api/admin/blacklist', auth, adminOnly, async (req, res) => {
+  try {
+    const [r] = await pool.execute('SELECT * FROM blacklist ORDER BY blacklisted_at DESC');
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/blacklist', auth, adminOnly, async (req, res) => {
+  const { admission_no, reason } = req.body;
+  if (!admission_no) return res.status(400).json({ error: 'Admission number required' });
+  try {
+    await pool.execute(
+      'INSERT INTO blacklist (admission_no, reason) VALUES (?, ?) ON DUPLICATE KEY UPDATE reason = ?',
+      [admission_no, reason || null, reason || null]
+    );
+    await logAction(req.user.email, 'blacklist_added', `Blacklisted admission number: ${admission_no}`, req);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/blacklist/:admission_no', auth, adminOnly, async (req, res) => {
+  const { admission_no } = req.params;
+  try {
+    await pool.execute('DELETE FROM blacklist WHERE admission_no = ?', [admission_no]);
+    await logAction(req.user.email, 'blacklist_removed', `Removed admission number from blacklist: ${admission_no}`, req);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── SYSTEM SETTINGS & CONFIGS ── */
+app.get('/api/admin/settings', auth, adminOnly, async (req, res) => {
+  try {
+    const [r] = await pool.execute('SELECT * FROM system_settings');
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/settings', auth, adminOnly, superAdminOnly, async (req, res) => {
+  const { key, value } = req.body;
+  if (!key || value === undefined) return res.status(400).json({ error: 'Key and value are required.' });
+  try {
+    await pool.execute(
+      'INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
+      [key, value, value]
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── AUDIT LOGS FOR SUPERADMIN ── */
+app.get('/api/admin/logs', auth, adminOnly, superAdminOnly, async (req, res) => {
+  try {
+    const [r] = await pool.execute('SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 500');
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+/* ── HOSTELS CONFIGURATION ── */
+app.post('/api/hostels', auth, adminOnly, async (req, res) => {
+  const { name, gender_type, total_rooms, fee_per_semester, status } = req.body;
+  if (!name || !gender_type || !fee_per_semester) {
+    return res.status(400).json({ error: 'Name, gender target, and fee are required.' });
+  }
+
+  const cleanGender = gender_type.toLowerCase().trim();
+  if (cleanGender !== 'male' && cleanGender !== 'female') {
+    return res.status(400).json({ error: 'Only Male or Female genders are permitted.' });
+  }
+
+  try {
+    const [r] = await pool.execute(
+      'INSERT INTO hostels (name, gender_type, total_rooms, fee_per_semester, status) VALUES (?,?,?,?,?)',
+      [name, cleanGender, total_rooms || 0, fee_per_semester, status || 'open']
+    );
+    await logAction(req.user.email, 'hostel_created', `Created hostel block: ${name}`, req);
+    res.json({ success: true, id: r.insertId });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/hostels/:id', auth, adminOnly, async (req, res) => {
+  const { name, gender_type, total_rooms, fee_per_semester, status } = req.body;
+  if (!name || !gender_type || !fee_per_semester) {
+    return res.status(400).json({ error: 'Name, gender target, and fee are required.' });
+  }
+
+  const cleanGender = gender_type.toLowerCase().trim();
+  if (cleanGender !== 'male' && cleanGender !== 'female') {
+    return res.status(400).json({ error: 'Only Male or Female genders are permitted.' });
+  }
+
+  try {
+    await pool.execute(
+      'UPDATE hostels SET name = ?, gender_type = ?, total_rooms = ?, fee_per_semester = ?, status = ? WHERE id = ?',
+      [name, cleanGender, total_rooms || 0, fee_per_semester, status || 'open', req.params.id]
+    );
+    await logAction(req.user.email, 'hostel_updated', `Updated hostel block ID: ${req.params.id}`, req);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ── ROOMS CREATION ── */
+app.post('/api/rooms', auth, adminOnly, async (req, res) => {
+  const { hostel_id, room_number, capacity } = req.body;
+  if (!hostel_id || !room_number || !capacity) {
+    return res.status(400).json({ error: 'Hostel ID, room number, and capacity are required.' });
+  }
+
+  try {
+    const [existing] = await pool.execute('SELECT id FROM rooms WHERE hostel_id = ? AND room_number = ?', [hostel_id, room_number]);
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Room number already exists in this hostel block.' });
+    }
+
+    const [r] = await pool.execute(
+      'INSERT INTO rooms (hostel_id, room_number, capacity, occupied_count, status) VALUES (?,?,?,0,"available")',
+      [hostel_id, room_number, capacity]
+    );
+
+    await pool.execute('UPDATE hostels SET total_rooms = total_rooms + 1 WHERE id = ?', [hostel_id]);
+
+    await logAction(req.user.email, 'room_created', `Created room ${room_number} in hostel ID ${hostel_id}`, req);
+    res.json({ success: true, id: r.insertId });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* ── AUTO ALLOCATION RUNNER ── */
+app.post('/api/admin/run-allocation', auth, adminOnly, superAdminOnly, async (req, res) => {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [apps] = await conn.execute(
+      `SELECT a.id AS app_id, a.student_id, a.preferred_hostel_id, u.fullname, p.gender, u.email
+       FROM applications a
+       JOIN users u ON a.student_id = u.id
+       LEFT JOIN user_profiles p ON u.id = p.user_id
+       WHERE a.status = 'approved'
+         AND u.id NOT IN (SELECT student_id FROM allocations WHERE status = 'active')
+       ORDER BY a.submitted_date ASC`
+    );
+
+    const [rooms] = await conn.execute(
+      `SELECT r.id AS room_id, r.room_number, r.capacity, r.occupied_count, h.id AS hostel_id, h.gender_type, h.fee_per_semester
+       FROM rooms r
+       JOIN hostels h ON r.hostel_id = h.id
+       WHERE r.occupied_count < r.capacity AND r.status = 'available'`
+    );
+
+    let allocatedCount = 0;
+
+    for (const app of apps) {
+      const studentGender = app.gender || 'male';
+      let matchedRoom = rooms.find(r => r.hostel_id === app.preferred_hostel_id && r.gender_type.toLowerCase() === studentGender.toLowerCase() && r.occupied_count < r.capacity);
+
+      if (!matchedRoom) {
+        matchedRoom = rooms.find(r => r.gender_type.toLowerCase() === studentGender.toLowerCase() && r.occupied_count < r.capacity);
+      }
+
+      if (matchedRoom) {
+        const [takenBeds] = await conn.execute(
+          'SELECT bed_label FROM allocations WHERE room_id = ? AND status = "active"',
+          [matchedRoom.room_id]
+        );
+        const takenLabels = takenBeds.map(b => b.bed_label);
+        
+        const possibleLabels = matchedRoom.capacity === 2 ? ['Bed A', 'Bed B'] : ['Bed A', 'Bed B', 'Bed C', 'Bed D'];
+        const vacantLabel = possibleLabels.find(l => !takenLabels.includes(l)) || 'Bed A';
+
+        const leaseEnd = '2027-06-30';
+        await conn.execute(
+          'INSERT INTO allocations (student_id, room_id, bed_label, academic_year, lease_end_date, status) VALUES (?, ?, ?, "2026/2027", ?, "active")',
+          [app.student_id, matchedRoom.room_id, vacantLabel, leaseEnd]
+        );
+
+        matchedRoom.occupied_count++;
+        await conn.execute('UPDATE rooms SET occupied_count = occupied_count + 1 WHERE id = ?', [matchedRoom.room_id]);
+
+        const [existingPay] = await conn.execute(
+          'SELECT id FROM payments WHERE student_id = ? AND status = "pending" LIMIT 1',
+          [app.student_id]
+        );
+        if (existingPay.length === 0) {
+          const cn = '9922' + Math.floor(10000000 + Math.random() * 90000000).toString();
+          await conn.execute(
+            'INSERT INTO payments (student_id, control_number, amount, payment_type) VALUES (?, ?, ?, "Semester 1 Hostel Fee")',
+            [app.student_id, cn, matchedRoom.fee_per_semester || 120000]
+          );
+        }
+
+        allocatedCount++;
+      }
+    }
+
+    await conn.commit();
+    await logAction(req.user.email, 'auto_allocation_run', `Executed auto-allocation: allocated ${allocatedCount} students`, req);
+    res.json({ success: true, allocated: allocatedCount });
+  } catch (err) {
+    await conn.rollback();
+    res.status(500).json({ error: err.message });
+  } finally {
+    conn.release();
+  }
 });
 
 app.listen(PORT, '127.0.0.1', () => {
