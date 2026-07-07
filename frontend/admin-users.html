@@ -6,6 +6,75 @@
   <title>Users Console — ATCHMS</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Premium Modal Button Styles */
+    .modal-action-btn {
+      background: linear-gradient(135deg, var(--primary, #0B5D3B), #063722);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(11, 93, 59, 0.25);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .modal-action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(11, 93, 59, 0.35);
+      background: linear-gradient(135deg, #0d7147, #08492e);
+    }
+    .modal-action-btn:active {
+      transform: translateY(0);
+    }
+    .modal-action-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .modal-secondary-btn {
+      background: #f3f4f6;
+      color: #4b5563;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .modal-secondary-btn:hover {
+      background: #e5e7eb;
+      color: #1f2937;
+    }
+    .modal-secondary-btn:active {
+      transform: translateY(1px);
+    }
+
+    .modal-danger-btn {
+      background: #fee2e2;
+      color: #ef4444;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .modal-danger-btn:hover {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #ef4444;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    }
+    .modal-danger-btn:active {
+      transform: translateY(1px);
+    }
+  </style>
 </head>
 <body class="admin-panel">
 
@@ -115,7 +184,7 @@
 
 <!-- Modal: User Profile Detail & Password Reset -->
 <div class="atchms-modal-overlay" id="user-modal">
-  <div class="atchms-modal-card" style="max-width: 580px; width: 90%;">
+  <div class="atchms-modal-box" style="max-width: 580px; width: 90%;">
     <div class="atchms-modal-header">
       <h5 id="modal-title">User Profile</h5>
       <button class="atchms-modal-close" onclick="closeUserModal()">✕</button>
@@ -125,8 +194,8 @@
         <div id="modal-details" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:14px; color:var(--text); margin-bottom: 16px;">
           <!-- Filled dynamically -->
         </div>
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 12px;">
-          <button type="submit" class="btn btn-primary" id="modal-update-btn">Save Profile Changes</button>
+        <div style="display:flex; justify-content:stretch; margin-top: 16px;">
+          <button type="submit" class="modal-action-btn" id="modal-update-btn" style="width:100%;">Save Profile Changes</button>
         </div>
       </form>
       
@@ -135,16 +204,16 @@
       <form id="reset-password-form" onsubmit="adminResetPassword(event)">
         <input type="hidden" id="reset-user-id" />
         <h6 style="margin:0 0 10px 0; font-size:14px; color:var(--dark); font-weight:700;">Reset Password</h6>
-        <div style="display:flex; gap:10px;">
-          <input type="password" id="reset-new-password" placeholder="Enter new password..." required minlength="6" class="form-control" style="flex:1;" />
-          <button type="submit" class="btn btn-primary" id="modal-reset-btn">Update Password</button>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="password" id="reset-new-password" placeholder="Enter new password..." required minlength="6" class="form-control" style="flex:1; height:40px; box-sizing:border-box;" />
+          <button type="submit" class="modal-action-btn" id="modal-reset-btn" style="height:40px; white-space:nowrap; padding:0 20px;">Update Password</button>
         </div>
       </form>
       
       <hr style="border:0; border-top:1.5px solid var(--border); margin:16px 0;" />
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span style="font-size:13px; color:var(--muted); font-weight:500;">Danger Zone:</span>
-        <button type="button" class="btn" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:6px 16px; font-size:13px;" onclick="adminDeleteUser()">Delete Account</button>
+        <button type="button" class="modal-danger-btn" onclick="adminDeleteUser()">Delete Account</button>
       </div>
     </div>
   </div>
@@ -152,7 +221,7 @@
 
 <!-- Modal: User Registration Form -->
 <div class="atchms-modal-overlay" id="register-modal">
-  <div class="atchms-modal-card" style="max-width: 580px; width: 90%;">
+  <div class="atchms-modal-box" style="max-width: 580px; width: 90%;">
     <div class="atchms-modal-header" style="padding-bottom:12px;">
       <h3 style="margin:0; font-size:16px; color:var(--dark); font-weight:700;">Register New User</h3>
       <button class="atchms-modal-close" onclick="closeRegisterModal()">✕</button>
@@ -218,9 +287,9 @@
         </div>
         
       </div>
-      <div class="atchms-modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:15px 20px;">
-        <button type="button" class="btn" style="background:var(--light); color:var(--text);" onclick="closeRegisterModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="reg-submit-btn">Register User</button>
+      <div class="atchms-modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:15px 20px; border-top: 1px solid var(--border); margin-top: 15px;">
+        <button type="button" class="modal-secondary-btn" onclick="closeRegisterModal()">Cancel</button>
+        <button type="submit" class="modal-action-btn" id="reg-submit-btn">Register User</button>
       </div>
     </form>
   </div>
