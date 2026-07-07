@@ -335,7 +335,7 @@ tbody tr:hover { background: var(--light); }
 .badge-red { background: #fbdcdc; color: #8a1f1f; }
 
 /* ===== Dashboard layout ===== */
-.app {
+.app, .layout {
   display: grid;
   grid-template-columns: 260px 1fr;
   min-height: calc(100vh - 80px);
@@ -417,7 +417,7 @@ tbody tr:hover { background: var(--light); }
 
 /* 3. Tablets & iPads Landscape (max-width: 1024px) */
 @media (max-width: 1024px) {
-  .app {
+  .app, .layout {
     grid-template-columns: 220px 1fr;
   }
   .sidebar {
@@ -452,14 +452,25 @@ tbody tr:hover { background: var(--light); }
     padding: 16px 20px;
     position: relative;
   }
-  .brand {
+  .nav .brand {
     flex-direction: row;
     align-items: center;
     text-align: left;
     gap: 12px;
+    order: 2;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
   }
   .nav-toggle-label {
     display: flex;
+    order: 1;
+    z-index: 11;
+  }
+  .notif-wrapper {
+    order: 3;
+    z-index: 11;
   }
   .menu {
     display: none; /* Hidden by default on mobile */
@@ -519,7 +530,7 @@ tbody tr:hover { background: var(--light); }
 
 
   /* App Layout for Tablets Portrait */
-  .app {
+  .app, .layout {
     grid-template-columns: 1fr;
     min-height: auto;
   }
@@ -816,7 +827,7 @@ tbody tr:hover { background: var(--light); }
 /* ===== Hostel cards ===== */
 .hostel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 26px;
 }
 .hostel-card {
@@ -1119,7 +1130,7 @@ tbody tr:hover { background: var(--light); }
   .section-inner {
     padding: 0;
   }
-  .app {
+  .app, .layout {
     grid-template-columns: 1fr;
   }
   .sidebar {
@@ -1586,15 +1597,18 @@ img, svg, video { max-width: 100%; height: auto; }
 
 /* ---- Grids collapse gracefully ---- */
 @media (max-width: 480px){
-  .stats,
   .mini-stats,
   .grid-3,
-  .hostel-grid,
   .actions-grid{
     grid-template-columns: 1fr !important;
     gap: 14px;
   }
-  .stats{ margin-top: -36px; padding: 0 14px; }
+  .stats,
+  .hostel-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+  }
+  .stats{ margin-top: -36px; padding: 0 10px; }
 }
 
 /* ---- Page head becomes stacked on mobile ---- */
@@ -1762,3 +1776,5 @@ body:has(.bottom-nav) [data-chatbot-toggle] {
 
 /* --- Reset weird inherited caret on interactive controls -------------- */
 button, .btn, a, select { caret-color: transparent; }
+
+
