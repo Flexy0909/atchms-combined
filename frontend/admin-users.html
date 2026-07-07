@@ -308,7 +308,7 @@
       }
     });
 
-    document.getElementById('user-modal').style.display = 'flex';
+    document.getElementById('user-modal').classList.add('active');
   }
 
   window.adminUpdateProfile = async (e) => {
@@ -360,7 +360,7 @@
   };
 
   function closeUserModal() {
-    document.getElementById('user-modal').style.display = 'none';
+    document.getElementById('user-modal').classList.remove('active');
   }
 
   async function adminResetPassword(e) {
@@ -413,11 +413,11 @@
   window.openRegisterModal = () => {
     document.getElementById('register-form').reset();
     toggleRoleFields();
-    document.getElementById('register-modal').style.display = 'flex';
+    document.getElementById('register-modal').classList.add('active');
   };
 
   window.closeRegisterModal = () => {
-    document.getElementById('register-modal').style.display = 'none';
+    document.getElementById('register-modal').classList.remove('active');
   };
 
   window.toggleRoleFields = () => {
