@@ -21,7 +21,7 @@
       <li><a href="admin-applications.html"><span class="dot"></span> Applications</a></li>
       <li><a href="admin-students.html"><span class="dot"></span> Students</a></li>
       <li><a href="admin-users.html" class="active"><span class="dot"></span> Users</a></li>
-      <li><a href="hostels.html"><span class="dot"></span> Hostels</a></li>
+      <li><a href="admin-hostels.html"><span class="dot"></span> Hostels</a></li>
       <li><a href="admin-rooms.html"><span class="dot"></span> Rooms</a></li>
       <li><a href="admin-rules.html"><span class="dot"></span> Allocation Rules</a></li>
       <li><a href="admin-payments.html"><span class="dot"></span> Payments</a></li>
@@ -80,22 +80,57 @@
         </table>
       </div>
     </div>
+
+    <!-- Blacklist Section -->
+    <div class="panel" style="margin-top: 24px;">
+      <h4 style="color:var(--dark); margin-bottom:4px;">🚫 Admission Blacklist Manager</h4>
+      <p style="font-size:13.5px; color:var(--muted); margin-bottom:16px;">
+        Prevent blacklisted admission numbers from logging in or registering.
+      </p>
+      
+      <form id="blacklist-form" onsubmit="addBlacklist(event)" style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+        <input type="text" id="bl-admission-no" placeholder="Enter Admission No (e.g. 25050512146)..." required class="form-control" style="flex:1; min-width:200px; height:42px;" />
+        <input type="text" id="bl-reason" placeholder="Reason for blacklisting..." class="form-control" style="flex:1.5; min-width:250px; height:42px;" />
+        <button type="submit" class="btn btn-primary" style="height:42px; background:#c0392b; border-color:#c0392b; color:white;">Blacklist Number</button>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Admission Number</th>
+              <th>Reason</th>
+              <th>Blacklisted At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="blacklist-tbody">
+            <tr><td colspan="4" style="text-align:center;">Loading blacklist database...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </main>
 </div>
 
 <!-- Modal: User Profile Detail & Password Reset -->
 <div class="atchms-modal-overlay" id="user-modal">
-  <div class="atchms-modal-card">
+  <div class="atchms-modal-card" style="max-width: 580px; width: 90%;">
     <div class="atchms-modal-header">
       <h5 id="modal-title">User Profile</h5>
       <button class="atchms-modal-close" onclick="closeUserModal()">✕</button>
     </div>
     <div class="atchms-modal-body">
-      <div id="modal-details" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:14px; color:var(--text); margin-bottom: 20px;">
-        <!-- Filled dynamically -->
-      </div>
+      <form id="edit-profile-form" onsubmit="adminUpdateProfile(event)" style="margin-bottom:0;">
+        <div id="modal-details" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:14px; color:var(--text); margin-bottom: 16px;">
+          <!-- Filled dynamically -->
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom: 12px;">
+          <button type="submit" class="btn btn-primary" id="modal-update-btn">Save Profile Changes</button>
+        </div>
+      </form>
       
-      <hr style="border:0; border-top:1.5px solid var(--border); margin:20px 0;" />
+      <hr style="border:0; border-top:1.5px solid var(--border); margin:16px 0;" />
       
       <form id="reset-password-form" onsubmit="adminResetPassword(event)">
         <input type="hidden" id="reset-user-id" />
@@ -105,6 +140,12 @@
           <button type="submit" class="btn btn-primary" id="modal-reset-btn">Update Password</button>
         </div>
       </form>
+      
+      <hr style="border:0; border-top:1.5px solid var(--border); margin:16px 0;" />
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:13px; color:var(--muted); font-weight:500;">Danger Zone:</span>
+        <button type="button" class="btn" style="background:#fee2e2; color:#ef4444; border:1px solid #fca5a5; padding:6px 16px; font-size:13px;" onclick="adminDeleteUser()">Delete Account</button>
+      </div>
     </div>
   </div>
 </div>
@@ -197,37 +238,126 @@
     const u = allUsers[index];
     document.getElementById('reset-user-id').value = u.id;
     document.getElementById('reset-new-password').value = '';
-    document.getElementById('modal-title').textContent = `${u.role === 'admin' ? 'Admin' : 'Student'} Profile: ${u.fullname}`;
+    document.getElementById('modal-title').textContent = `Manage Account: ${u.fullname}`;
     
     const initials = (u.fullname || '??').split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
     const avatarHtml = u.avatar_url 
-      ? `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:16px;">
-          <img src="${u.avatar_url}" onclick="ATCHMS.previewImage('${u.avatar_url}')" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.15); cursor:pointer;" alt="User Photo" />
+      ? `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:12px;">
+          <img src="${u.avatar_url}" onclick="ATCHMS.previewImage('${u.avatar_url}')" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--primary); box-shadow:0 3px 8px rgba(0,0,0,0.15); cursor:pointer;" alt="User Photo" />
          </div>`
-      : `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:16px;">
-          <div style="width:100px; height:100px; border-radius:50%; background:var(--light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700; border:3px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.15);">${initials}</div>
+      : `<div style="grid-column: span 2; display:flex; justify-content:center; margin-bottom:12px;">
+          <div style="width:80px; height:80px; border-radius:50%; background:var(--light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; border:2px solid var(--primary); box-shadow:0 3px 8px rgba(0,0,0,0.15);">${initials}</div>
          </div>`;
 
     let profileDetailsHtml = avatarHtml + `
-      <div><strong>Full Name:</strong><br>${u.fullname}</div>
-      <div><strong>Email Address:</strong><br>${u.email}</div>
-      <div><strong>Phone Number:</strong><br>${u.phone_no || 'N/A'}</div>
-      <div><strong>Role:</strong><br><span style="text-transform: capitalize;" class="badge ${u.role === 'admin' ? 'badge-gold' : 'badge-green'}">${u.role}</span></div>
-      <div><strong>Gender:</strong><br>${u.gender ? u.gender.toUpperCase() : 'N/A'}</div>
-      <div><strong>Registration Date:</strong><br>${ATCHMS.fmtDate(u.created_at)}</div>
+      <div style="grid-column: span 2; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Full Name</label>
+          <input type="text" id="edit-fullname" value="${u.fullname || ''}" required class="form-control" style="font-size:13.5px; padding:8px 10px;" />
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Email Address</label>
+          <input type="email" id="edit-email" value="${u.email || ''}" required class="form-control" style="font-size:13.5px; padding:8px 10px;" />
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Phone Number</label>
+          <input type="text" id="edit-phone" value="${u.phone_no || ''}" required class="form-control" style="font-size:13.5px; padding:8px 10px;" />
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Role</label>
+          <select id="edit-role" class="form-control" style="font-size:13.5px; padding:8px 10px; height:auto; display:block; width:100%; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
+            <option value="student" ${u.role === 'student' ? 'selected' : ''}>Student</option>
+            <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Gender</label>
+          <select id="edit-gender" class="form-control" style="font-size:13.5px; padding:8px 10px; height:auto; display:block; width:100%; border:1px solid var(--border); border-radius:6px; box-sizing:border-box;">
+            <option value="male" ${u.gender === 'male' ? 'selected' : ''}>Male</option>
+            <option value="female" ${u.gender === 'female' ? 'selected' : ''}>Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Admission No</label>
+          <input type="text" id="edit-admission" value="${u.admission_no || ''}" class="form-control" style="font-size:13.5px; padding:8px 10px;" ${u.role !== 'student' ? 'disabled' : ''} />
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Course / Programme</label>
+          <input type="text" id="edit-programme" value="${u.programme || ''}" class="form-control" style="font-size:13.5px; padding:8px 10px;" ${u.role !== 'student' ? 'disabled' : ''} />
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; font-size:11.5px; color:var(--muted); display:block; margin-bottom:4px;">Academic Year</label>
+          <input type="text" id="edit-academic-year" value="${u.academic_year || ''}" class="form-control" style="font-size:13.5px; padding:8px 10px;" ${u.role !== 'student' ? 'disabled' : ''} />
+        </div>
+      </div>
     `;
 
-    if (u.role === 'student') {
-      profileDetailsHtml += `
-        <div><strong>Admission No:</strong><br><span style="font-family:monospace;">${u.admission_no || 'N/A'}</span></div>
-        <div><strong>Course / Programme:</strong><br>${u.programme || 'N/A'}</div>
-        <div><strong>Academic Year:</strong><br>${u.academic_year || 'N/A'}</div>
-      `;
-    }
-
     document.getElementById('modal-details').innerHTML = profileDetailsHtml;
+    
+    // Enable/disable student fields dynamically if role dropdown changes
+    const roleSelect = document.getElementById('edit-role');
+    roleSelect.addEventListener('change', () => {
+      const isStudent = roleSelect.value === 'student';
+      document.getElementById('edit-admission').disabled = !isStudent;
+      document.getElementById('edit-programme').disabled = !isStudent;
+      document.getElementById('edit-academic-year').disabled = !isStudent;
+      if (!isStudent) {
+        document.getElementById('edit-admission').value = '';
+        document.getElementById('edit-programme').value = '';
+        document.getElementById('edit-academic-year').value = '';
+      }
+    });
+
     document.getElementById('user-modal').style.display = 'flex';
   }
+
+  window.adminUpdateProfile = async (e) => {
+    e.preventDefault();
+    const userId = document.getElementById('reset-user-id').value;
+    const fullname = document.getElementById('edit-fullname').value;
+    const email = document.getElementById('edit-email').value;
+    const phone_no = document.getElementById('edit-phone').value;
+    const role = document.getElementById('edit-role').value;
+    const gender = document.getElementById('edit-gender').value;
+    
+    const admission_no = document.getElementById('edit-admission').value;
+    const programme = document.getElementById('edit-programme').value;
+    const academic_year = document.getElementById('edit-academic-year').value;
+
+    const body = {
+      fullname,
+      email,
+      phone_no,
+      role,
+      gender,
+      admission_no: role === 'student' ? admission_no : null,
+      programme: role === 'student' ? programme : null,
+      academic_year: role === 'student' ? academic_year : null
+    };
+
+    const btn = document.getElementById('modal-update-btn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    try {
+      const res = await ATCHMS.api(`/admin/users/${userId}`, {
+        method: 'PUT',
+        body: JSON.stringify(body)
+      });
+      if (res.success) {
+        ATCHMS.alert('User profile updated successfully!', 'Success');
+        closeUserModal();
+        window.loadUsers();
+      } else {
+        ATCHMS.alert(res.error || 'Failed to update user profile', 'Error');
+      }
+    } catch (err) {
+      ATCHMS.alert('Failed to update profile: ' + err.message, 'Error');
+    } finally {
+      btn.textContent = 'Save Profile Changes';
+      btn.disabled = false;
+    }
+  };
 
   function closeUserModal() {
     document.getElementById('user-modal').style.display = 'none';
@@ -248,18 +378,37 @@
         body: JSON.stringify({ student_id, new_password })
       });
       if (res.error) {
-        alert('Error: ' + res.error);
+        ATCHMS.alert('Error: ' + res.error, 'Error');
       } else {
-        alert('✅ Password updated successfully! Provide this new password to the user.');
+        ATCHMS.alert('✅ Password updated successfully! Provide this new password to the user.', 'Success');
         closeUserModal();
       }
     } catch(err) {
-      alert('Error updating password: ' + err.message);
+      ATCHMS.alert('Error updating password: ' + err.message, 'Error');
     } finally {
       btn.textContent = 'Update Password';
       btn.disabled = false;
     }
   }
+
+  window.adminDeleteUser = async () => {
+    const userId = document.getElementById('reset-user-id').value;
+    const confirmed = await ATCHMS.confirm('Are you sure you want to permanently delete this user account? All associated application, allocation, payment, and ticket logs will also be cleaned up.', 'Confirm Delete');
+    if (!confirmed) return;
+    
+    try {
+      const res = await ATCHMS.api(`/admin/users/${userId}`, { method: 'DELETE' });
+      if (res.success) {
+        closeUserModal();
+        window.loadUsers();
+        ATCHMS.alert('User account deleted successfully!', 'Success');
+      } else {
+        ATCHMS.alert(res.error || 'Failed to delete user', 'Error');
+      }
+    } catch (err) {
+      ATCHMS.alert('Failed to delete: ' + err.message, 'Error');
+    }
+  };
 
   window.openRegisterModal = () => {
     document.getElementById('register-form').reset();
@@ -317,14 +466,14 @@
       });
 
       if (res.error) {
-        alert('Error: ' + res.error);
+        ATCHMS.alert('Error: ' + res.error, 'Error');
       } else {
-        alert('✅ User registered successfully!');
+        ATCHMS.alert('User registered successfully!', 'Success');
         closeRegisterModal();
-        loadUsers();
+        window.loadUsers();
       }
     } catch (err) {
-      alert('Failed: ' + err.message);
+      ATCHMS.alert('Failed: ' + err.message, 'Error');
     } finally {
       btn.textContent = 'Register User';
       btn.disabled = false;
@@ -385,7 +534,7 @@
   };
 
   if (ATCHMS.requireAdmin()) {
-    async function loadUsers() {
+    window.loadUsers = async function loadUsers() {
       try {
         const users = await ATCHMS.api('/admin/users');
         allUsers = users;
@@ -402,9 +551,83 @@
       } catch (err) {
         console.error('Error loading users:', err);
       }
+    };
+
+    /* ── Blacklist Operations ── */
+    async function loadBlacklist() {
+      try {
+        const data = await ATCHMS.api('/admin/blacklist');
+        const tbody = document.getElementById('blacklist-tbody');
+        if (data.length > 0) {
+          tbody.innerHTML = data.map(b => `
+            <tr>
+              <td data-label="Admission Number"><code>${b.admission_no}</code></td>
+              <td data-label="Reason">${b.reason || '—'}</td>
+              <td data-label="Blacklisted At">${ATCHMS.fmtDateTime(b.blacklisted_at)}</td>
+              <td data-label="Action">
+                <button class="action-btn view-btn" style="background:#fee2e2; color:#ef4444;" onclick="removeBlacklist('${b.admission_no}')">Remove</button>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No admission numbers are currently blacklisted.</td></tr>';
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
-    document.addEventListener('DOMContentLoaded', loadUsers);
+    window.addBlacklist = async (e) => {
+      e.preventDefault();
+      const admission_no = document.getElementById('bl-admission-no').value.trim();
+      const reason = document.getElementById('bl-reason').value.trim();
+      
+      const btn = e.target.querySelector('button[type="submit"]');
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Processing...';
+
+      try {
+        const res = await ATCHMS.api('/admin/blacklist', {
+          method: 'POST',
+          body: JSON.stringify({ admission_no, reason })
+        });
+        if (res.success) {
+          document.getElementById('blacklist-form').reset();
+          loadBlacklist();
+          ATCHMS.alert('Admission number blacklisted successfully!', 'Success');
+        } else {
+          ATCHMS.alert(res.error || 'Failed to blacklist number', 'Error');
+        }
+      } catch (err) {
+        ATCHMS.alert('Error blacklisting: ' + err.message, 'Error');
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    };
+
+    window.removeBlacklist = async (admission_no) => {
+      const confirmed = await ATCHMS.confirm(`Are you sure you want to remove ${admission_no} from the blacklist?`, 'Remove Blacklist');
+      if (!confirmed) return;
+
+      try {
+        const res = await ATCHMS.api(`/admin/blacklist/${admission_no}`, {
+          method: 'DELETE'
+        });
+        if (res.success) {
+          loadBlacklist();
+          ATCHMS.alert('Admission number removed from blacklist.', 'Success');
+        } else {
+          ATCHMS.alert(res.error || 'Failed to remove blacklist', 'Error');
+        }
+      } catch (err) {
+        ATCHMS.alert('Error removing: ' + err.message, 'Error');
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      window.loadUsers();
+      loadBlacklist();
+    });
   }
 </script>
 </body>
