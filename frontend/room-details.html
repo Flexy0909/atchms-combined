@@ -59,7 +59,6 @@
     pointer-events: none;
   }
 </style>
-<link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#0B5D3B" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -226,51 +225,76 @@
     async function loadAllocation() {
       try {
         const res = await ATCHMS.api('/allocations/my');
-        if (res.allocated) {
+        if (res && res.allocated) {
           loadedAllocation = res;
           document.getElementById('allocated-view').style.display = 'block';
+          document.getElementById('no-allocated-view').style.display = 'none';
           
-          document.getElementById('hero-room-number').textContent = `Room ${res.room_number}`;
-          document.getElementById('hero-hostel-name').textContent = res.hostel_name;
-          document.getElementById('hero-details').textContent = `${res.floor} · ${res.gender_type} sharing`;
+          document.getElementById('hero-room-number').textContent = `Room ${res.room_number || 'N/A'}`;
+          document.getElementById('hero-hostel-name').textContent = res.hostel_name || 'N/A';
+          document.getElementById('hero-details').textContent = `${res.floor || '2nd Floor'} · ${res.gender_type || 'any'} sharing`;
           
           const start = ATCHMS.fmtDate(res.allocated_on);
           const end = ATCHMS.fmtDate(res.lease_end_date);
           document.getElementById('hero-lease').textContent = `${start} — ${end}`;
 
-          document.getElementById('info-hostel').textContent = res.hostel_name;
-          document.getElementById('info-room').textContent = res.room_number;
+          document.getElementById('info-hostel').textContent = res.hostel_name || 'N/A';
+          document.getElementById('info-room').textContent = res.room_number || 'N/A';
           document.getElementById('info-bed').textContent = res.bed_label || 'Not Labeled';
-          document.getElementById('info-floor').textContent = res.floor;
-          document.getElementById('info-gender').textContent = res.gender_type;
+          document.getElementById('info-floor').textContent = res.floor || '2nd Floor';
+          document.getElementById('info-gender').textContent = res.gender_type || 'any';
           document.getElementById('info-allocated').textContent = start;
           document.getElementById('info-lease-end').textContent = end;
 
           // Render 3D Canvas
           initOrUpdate3D();
 
-          const rmates = res.roommates;
+          const user = ATCHMS.getUser() || {};
+          const rmates = res.roommates || [];
+          const members = [
+            {
+              fullname: (user.fullname || 'You') + " (You)",
+              admission_no: user.admission_no || 'N/A',
+              programme: user.programme || 'N/A',
+              academic_year: user.academic_year || 'N/A',
+              email: user.email || 'N/A',
+              phone_no: user.phone_no || 'N/A',
+              isSelf: true
+            },
+            ...rmates
+          ];
+
           const container = document.getElementById('roommates-container');
-          if (rmates && rmates.length > 0) {
-            container.innerHTML = rmates.map(r => `
-              <div class="profile-card" style="margin-bottom:12px;">
-                <div class="avatar">${r.fullname.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2)}</div>
-                <div>
-                  <h4>${r.fullname}</h4>
-                  <p>${r.admission_no || 'N/A'} · ${r.programme || 'N/A'} · ${r.academic_year || 'N/A'}</p>
-                  <p>${r.email} · ${r.phone_no}</p>
+          if (container) {
+            container.innerHTML = members.map(r => {
+              const nameStr = r.fullname || 'Student';
+              const initials = nameStr.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2) || '??';
+              return `
+                <div class="profile-card" style="margin-bottom:12px; border-left: 4px solid ${r.isSelf ? 'var(--primary)' : 'var(--border)'}; padding: 12px;">
+                  <div class="avatar" style="background: ${r.isSelf ? 'var(--primary)' : 'var(--light)'}; color: ${r.isSelf ? '#fff' : 'var(--text)'};">
+                    ${initials}
+                  </div>
+                  <div>
+                    <h4>${nameStr}</h4>
+                    <p style="font-size: 13px; color: var(--muted); margin-bottom: 4px;">${r.admission_no || 'N/A'} · ${r.programme || 'N/A'} · ${r.academic_year || 'N/A'}</p>
+                    <p style="font-size: 13px;">
+                      <a href="mailto:${r.email}" style="color:var(--primary); text-decoration:none; margin-right: 12px;">✉️ ${r.email || 'N/A'}</a>
+                      <a href="tel:${r.phone_no}" style="color:var(--primary); text-decoration:none; font-weight:600;">📞 ${r.phone_no || 'N/A'}</a>
+                    </p>
+                  </div>
                 </div>
-              </div>
-            `).join('');
-          } else {
-            container.innerHTML = '<p style="color:var(--muted); font-size:14px;">No roommates allocated to this room yet.</p>';
+              `;
+            }).join('');
           }
 
         } else {
           document.getElementById('no-allocated-view').style.display = 'block';
+          document.getElementById('allocated-view').style.display = 'none';
         }
       } catch (err) {
         console.error(err);
+        document.getElementById('no-allocated-view').style.display = 'block';
+        document.getElementById('allocated-view').style.display = 'none';
       }
     }
 
@@ -280,7 +304,8 @@
       }
 
       const container = document.getElementById('details-3d-canvas');
-      const allocation = loadedAllocation;
+      if (!container) return;
+      const allocation = loadedAllocation || {};
       
       // Construct a mock room object for the library
       const room = {
@@ -290,18 +315,20 @@
       };
 
       // Construct allocations array, adding the current user as an occupant
+      const userObj = ATCHMS.getUser() || {};
+      const roommatesList = allocation.roommates || [];
       const occupants = [
         {
           student_id: 0, // current student
-          bed_label: allocation.bed_label,
-          fullname: 'You (' + ATCHMS.getUser().fullname + ')'
+          bed_label: allocation.bed_label || 'Bed A',
+          fullname: 'You (' + (userObj.fullname || 'Student') + ')'
         },
-        ...allocation.roommates.map(r => ({
+        ...roommatesList.map(r => ({
           student_id: r.student_id || 999,
           bed_label: r.bed_label || 'Bed B',
-          fullname: r.fullname,
-          admission_no: r.admission_no,
-          programme: r.programme
+          fullname: r.fullname || 'Student Roommate',
+          admission_no: r.admission_no || 'N/A',
+          programme: r.programme || 'N/A'
         }))
       ];
 
@@ -311,6 +338,7 @@
         active3DInstance = ATCHMS3D.init3DRoom(container, room, occupants, null, allocation.bed_label);
       }
     }
+
 
     window.toggleTourMode = () => {
       tourModeActive = !tourModeActive;

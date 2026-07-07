@@ -99,7 +99,14 @@
       scene.add(floor);
 
       // Walls
-      const wallMat = new THREE.MeshStandardMaterial({ color: '#dddddd', roughness: 0.9 });
+      const wallMat = new THREE.MeshStandardMaterial({ color: '#dddddd', roughness: 0.9, side: THREE.DoubleSide });
+      const transparentWallMat = new THREE.MeshStandardMaterial({ 
+        color: '#dddddd', 
+        roughness: 0.9, 
+        transparent: true, 
+        opacity: 0.15, 
+        side: THREE.DoubleSide 
+      });
       
       // Back Wall
       const backWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), wallMat);
@@ -110,6 +117,16 @@
       const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, d), wallMat);
       leftWall.position.set(-w/2, h/2, 0);
       scene.add(leftWall);
+
+      // Front Wall (Transparent)
+      const frontWall = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.1), transparentWallMat);
+      frontWall.position.set(0, h/2, d/2);
+      scene.add(frontWall);
+
+      // Right Wall (Transparent)
+      const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.1, h, d), transparentWallMat);
+      rightWall.position.set(w/2, h/2, 0);
+      scene.add(rightWall);
 
       // 5. Asset Placement Arrays
       const bedObjects = [];
